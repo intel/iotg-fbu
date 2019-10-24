@@ -144,7 +144,7 @@ class SubRegionDescriptor(object):
                 valid_file = False
             if data_field.Type not in data_types:
                 valid_file = False
-            if data_field.ByteSize <= 0:
+            if data_field.ByteSize < 0:
                 valid_file = False
             if type(data_field.Value) not in [str, int]:
                 valid_file = False

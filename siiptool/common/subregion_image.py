@@ -206,10 +206,14 @@ def create_gen_fv_command(fv_guid, output_fv_file, ffs_file, input_fv_file=None,
 def create_buffer_from_data_field(data_field):
     buffer = None
     if data_field.Type == subrgn_descptr.data_types.FILE:
-        buffer = bytearray(data_field.ByteSize)  # Allocate the buffer
-        with open(data_field.Value, "rb") as DataFile:
-            tmp = DataFile.read(data_field.ByteSize)
-        buffer[:len(tmp)] = tmp  # copy data to the beginning of the buffer
+        if data_field.ByteSize == 0:   # Read the whole file
+            with open(data_field.Value, "rb") as DataFile:
+                buffer = DataFile.read()
+        else:
+            buffer = bytearray(data_field.ByteSize)  # Allocate the buffer
+            with open(data_field.Value, "rb") as DataFile:
+                tmp = DataFile.read(data_field.ByteSize)
+            buffer[:len(tmp)] = tmp  # copy data to the beginning of the buffer
 
     if data_field.Type == subrgn_descptr.data_types.STRING:
         fmt = "{}s".format(data_field.ByteSize)
