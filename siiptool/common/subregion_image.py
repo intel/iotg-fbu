@@ -178,12 +178,12 @@ def build_fv_from_ffs_files(sub_region_desc, out_file, ffs_file_list):
     fv_cmd_list = []
     for file_index, file in enumerate(ffs_file_list):
         if file_index > 0:
-            # Using the created output file as input. Updating the output file with new ffs_File
-            fv_cmd = create_gen_fv_command(sub_region_desc.s_fv_guid, out_file, file, out_file,)
+            # Use other files just add with file input option in the same command;
+            fv_cmd += ["-f", file]
         else:
             fv_cmd = create_gen_fv_command(sub_region_desc.s_fv_guid, out_file, file)
 
-        fv_cmd_list.append(fv_cmd)
+    fv_cmd_list.append(fv_cmd)
 
     return fv_cmd_list
 

@@ -59,6 +59,12 @@ IP_OPTIONS = {
         [None],
         ["free", "4DB2A373-C936-4544-AA6D-8A194AA9CA7F", None],
     ],
+    "oob_rootca": [
+        ["ui", "IntelOobRootCA"],
+        ["raw", "PI_NONE"],
+        [None],
+        ["free", "2F4DE35A-0D52-44FC-ABF3-75B8AA51F434", None],
+    ],
     "vbt": [
         ["ui", "IntelGopVbt"],
         ["raw", "PI_NONE"],
