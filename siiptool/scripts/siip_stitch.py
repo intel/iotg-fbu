@@ -163,7 +163,7 @@ def check_key(file):
             with open(file, "r") as key:
                 key_lines = key.readlines()
             if not ((FIRSTLINE in key_lines[0]) and (LASTLINE in key_lines[-1])):
-                raise argparse.ArgumentTypeError("{} is not an RSA priviate key".format(file))
+                raise argparse.ArgumentTypeError("{} is not an RSA private key".format(file))
     else:
         raise argparse.ArgumentTypeError("{} does not exist".format(file))
 
