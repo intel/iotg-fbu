@@ -149,14 +149,27 @@ if __name__ == "__main__":
     gen_cap_cmd += ["--capflag", "PersistAcrossReset"]
     gen_cap_cmd += ["--capflag", "InitiateReset"]
     gen_cap_cmd += ["-o", args.OutputCapsuleFile]
-    if(
-            args.OpenSslSignerPrivateCertFile and
-            args.OpenSslOtherPublicCertFile and
-            args.OpenSslTrustedPublicCertFile
+    if all(
+            [
+                args.OpenSslSignerPrivateCertFile,
+                args.OpenSslOtherPublicCertFile,
+                args.OpenSslTrustedPublicCertFile
+            ]
     ):
-        gen_cap_cmd += ["--signer-private-cert", args.OpenSslSignerPrivateCertFile]
+        gen_cap_cmd += ["--signer-private-cert",
+                        args.OpenSslSignerPrivateCertFile]
         gen_cap_cmd += ["--other-public-cert", args.OpenSslOtherPublicCertFile]
-        gen_cap_cmd += ["--trusted-public-cert", args.OpenSslTrustedPublicCertFile]
+        gen_cap_cmd += ["--trusted-public-cert",
+                        args.OpenSslTrustedPublicCertFile]
+    elif any(
+            [
+                args.OpenSslSignerPrivateCertFile,
+                args.OpenSslOtherPublicCertFile,
+                args.OpenSslTrustedPublicCertFile
+            ]
+    ):
+        print('All-or-none of the certificate files must be provided.')
+        exit(2)
 
     gen_cap_cmd += ["-v"]
 
