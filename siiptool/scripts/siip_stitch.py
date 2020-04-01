@@ -36,7 +36,7 @@ from common.banner import banner
 import common.logging as logging
 
 __prog__ = "siip_stitch"
-__version__ = "0.7.3"
+__version__ = "0.7.4"
 TOOLNAME = "SIIP Stitching Tool"
 
 banner(TOOLNAME, __version__)
@@ -47,7 +47,7 @@ if sys.version_info < (3, 7):
     raise Exception("Python 3.7 is the minimal version required")
 
 GUID_FVADVANCED = uuid.UUID("B23E7388-9953-45C7-9201-0473DDE5487A")
-
+GUID_FVSECURITY = uuid.UUID("5A9A8B4E-149A-4CB2-BDC7-C8D62DE2C8CF")
 
 def search_for_fv(inputfile, ipname):
     """Search for the firmware volume."""
@@ -287,7 +287,7 @@ def update_obb_digest(ifwi_file, digest_file):
     bios.ParseFd()
 
     # Extract FVs belongs to OBB
-    obb_fv_idx = bios.get_fv_index_by_guid(GUID_FVADVANCED.bytes_le)
+    obb_fv_idx = bios.get_fv_index_by_guid(GUID_FVSECURITY.bytes_le)
     if not (0 < obb_fv_idx < len(bios.FvList)):
         raise ValueError("Starting OBB FV is not found")
 
@@ -295,13 +295,13 @@ def update_obb_digest(ifwi_file, digest_file):
     obb_offset = bios.FvList[obb_fv_idx].Offset
     obb_length = 0
     if bios.is_fsp_wrapper():
-        # FVADVANCED + FVPOSTMEMORY + FSPS
+        # FVSECURITY + FVOSBOOT + FVUEFIBOOT_PRIME + FVADVANCED + FVPOSTMEMORY + FSPS
         logger.info("FSP Wrapper BIOS")
-        obb_fv_end = obb_fv_idx + 3
+        obb_fv_end = obb_fv_idx + 6
     else:
-        # FVADVANCED + FVPOSTMEMORY
+        # FVSECURITY + FVOSBOOT + FVUEFIBOOT_PRIME + FVADVANCED + FVPOSTMEMORY
         logger.info("EDK2 BIOS")
-        obb_fv_end = obb_fv_idx + 2
+        obb_fv_end = obb_fv_idx + 5
     for fv in bios.FvList[obb_fv_idx:obb_fv_end]:
         obb_length += len(fv.FvData)
 
@@ -375,7 +375,7 @@ def main():
         stitch_and_update(args.IFWI_IN.name, args.ipname, filenames, args.OUTPUT_FILE)
 
         # Update OBB digest after stitching any data inside OBB region
-        if args.ipname in ["vbt", "gfxpeim"]:
+        if args.ipname in ["gop", "vbt", "gfxpeim"]:
             ipname = "obb_digest"
             digest_file = "tmp.obb.hash.bin"
 
