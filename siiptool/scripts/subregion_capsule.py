@@ -24,8 +24,8 @@ import common.logging as logging
 
 logger = logging.getLogger("subregion_capsule")
 
-if sys.version_info < (3, 7):
-    raise Exception("Python 3.7 is the minimal version required")
+if sys.version_info < (3, 6):
+    raise Exception("Python 3.6 is the minimal version required")
 
 #
 # Globals for help information
