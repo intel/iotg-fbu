@@ -1,65 +1,74 @@
-# Firmware and BIOS Utilities
+# Firmware and BIOS Utilities (FBU)
 
-The project contains Python scripts to stitch sub-region images to Intel FirmWare Image (IFWI) and create UEFI capsule for these sub-region images.
+The project contains command line Python scripts to stitch sub-region images to Intel FirmWare Image (IFWI) and create UEFI capsule images. Optionally, signing tool is
+included to generate signed sub-region image.
 
-These scripts are command line and requires Python3.
+It supports Windows 10, Ubuntu Linux, or Yocto Linux.
 
-## Host Requirement
+- [Firmware and BIOS Utilities (FBU)](#firmware-and-bios-utilities-fbu)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Sub-region capsule tool](#sub-region-capsule-tool)
+      - [JSON Input Format](#json-input-format)
+      - [Certificate files](#certificate-files)
+      - [Create capsule image](#create-capsule-image)
+    - [Stitching tool](#stitching-tool)
+    - [Signing tool](#signing-tool)
+  - [License](#license)
 
-- Windows 10 or Ubuntu Linux
-- Python 3.7 or newer and additional [modules](requirements.txt)
-- openssl
 
-## Get Started
+## Installation
 
-### Install required dependencies
+* Install Python v3.6 and additional [modules](requirements.txt)
 
 ```
 pip install -r requirements.txt
 ```
 
-### Install openssl
+* Install openssl
 
 Manually install OpenSSL to the host and add it to the system environment variable **PATH**.
 
 Pre-compiled OpenSSL for Windows can be downloaded from [here](https://wiki.openssl.org/index.php/Binaries). You may use `apt-get` to install openssl on Ubuntu Linux.
 
-## sub-region capsule tool
+## Usage
 
-### JSON Input Format
+### Sub-region capsule tool
 
-The main input to run sub-region capsule is in JSON format that describes the data values to be serialized into binary format.
+#### JSON Input Format
+
+Input file to run sub-region capsule requires a JSON format that describes the data structure and field values to be serialized into binary format.
 
 Format of the JSON payload descriptor file:
 
 ```json
-{
-  "FmpGuid": <string (GUID)>,
-  "Version": <integer>,
-  "FV" :
   {
-    "FvGuid": <string (GUID)>,
-    "FfsFiles":
-    [
-      {
-        "FileGuid": <string (GUID)>,
-        "Compression": <boolean>,
-        "Data" :
-        [
-          [<string (member_name)>, <string (data_type)>, <integer (byte_size)>, <integer|string (member_value)>],
-          ...
-        ]
-      }
-    ]
+     "FmpGuid": <string (GUID)>,
+     "Version": <integer>,
+     "FV" :
+     {
+       "FvGuid": <string (GUID)>,
+       "FfsFiles":
+       [
+         {
+          "FileGuid": <string (GUID)>,
+          "Compression": <boolean>,
+          "Data" :
+          [
+             [<string (member_name)>, <string (data_type)>, <integer (byte_size)>, <integer|string (member_value)>],
+            ...
+          ]
+        }
+      ]
+    }
   }
-}
 ```
 
 Supported `data_type` values are "DECIMAL", "HEXADECIMAL", "STRING" or "FILE".
 
-### Certificate files
+#### Certificate files
 
-For security reasons, certificates are not provided in this project. For testing purpose, you can download them from [here](https://github.com/tianocore/edk2/tree/master/BaseTools/Source/Python/Pkcs7Sign).
+If the signed capsule is required, you shall provide certificates from the command line. For testing purpose, they can be downloaded from [here](https://github.com/tianocore/edk2/tree/master/BaseTools/Source/Python/Pkcs7Sign).
 
 ```
 TestCert.pem
@@ -70,49 +79,22 @@ TestRoot.pub.pem
 > **_NOTE:_** if certificate files does not match the ones built in BIOS, the capsule cannot be updated.
 
 
-### Create sub-region capsule image
+#### Create capsule image
+
+> **_NOTE:_** JSON_FILE should be obtained from the owners of sub-region data.
+
 
 ```shell
-python3 subregion_capsule.py -o capsule.out.bin --signer-private-cert=TestCert.pem --other-public-cert=TestSub.pub.pem --trusted-public-cert=TestRoot.pub.pem <JSON_FILE>
-```
+$ python3 subregion_capsule.py -o capsule.out.bin -s TestCert.pem -p TestSub.pub.pem -t TestRoot.pub.pem <JSON_FILE>
 
-The content of `JSON_FILE` should be obtained from sub-region owner team.
-
-
-```
 Output messages :
 Read binary input file ./SubRegionFv.fv
 FMP_PAYLOAD_HEADER.Signature              = 3153534D (MSS1)
 FMP_PAYLOAD_HEADER.HeaderSize             = 00000010
 FMP_PAYLOAD_HEADER.FwVersion              = 00000001
 FMP_PAYLOAD_HEADER.LowestSupportedVersion = 00000000
-sizeof (Payload)                          = 00001000
-EFI_FIRMWARE_IMAGE_AUTHENTICATION.MonotonicCount                = 0000000000000000
-EFI_FIRMWARE_IMAGE_AUTHENTICATION.AuthInfo.Hdr.dwLength         = 00000AED
-EFI_FIRMWARE_IMAGE_AUTHENTICATION.AuthInfo.Hdr.wRevision        = 0200
-EFI_FIRMWARE_IMAGE_AUTHENTICATION.AuthInfo.Hdr.wCertificateType = 0EF1
-EFI_FIRMWARE_IMAGE_AUTHENTICATION.AuthInfo.CertType             = 4AAFD29D-68DF-49EE-8AA9-347D375665A7
-sizeof (EFI_FIRMWARE_IMAGE_AUTHENTICATION.AuthInfo.CertData)    = 00000AD5
-sizeof (Payload)                                                = 00001010
-EFI_FIRMWARE_MANAGEMENT_CAPSULE_HEADER.Version             = 00000001
-EFI_FIRMWARE_MANAGEMENT_CAPSULE_HEADER.EmbeddedDriverCount = 00000000
-EFI_FIRMWARE_MANAGEMENT_CAPSULE_HEADER.PayloadItemCount    = 00000001
-EFI_FIRMWARE_MANAGEMENT_CAPSULE_HEADER.ItemOffsetList      =
-  0000000000000010
-EFI_FIRMWARE_MANAGEMENT_CAPSULE_IMAGE_HEADER.Version                = 00000002
-EFI_FIRMWARE_MANAGEMENT_CAPSULE_IMAGE_HEADER.UpdateImageTypeId      = 6FEE88FF-49ED-48F1-B77B-EAD15771ABE7
-EFI_FIRMWARE_MANAGEMENT_CAPSULE_IMAGE_HEADER.UpdateImageIndex       = 00000001
-EFI_FIRMWARE_MANAGEMENT_CAPSULE_IMAGE_HEADER.UpdateImageSize        = 00001B05
-EFI_FIRMWARE_MANAGEMENT_CAPSULE_IMAGE_HEADER.UpdateVendorCodeSize   = 00000000
-EFI_FIRMWARE_MANAGEMENT_CAPSULE_IMAGE_HEADER.UpdateHardwareInstance = 0000000000000000
-sizeof (Payload)                                                    = 00001B05
-sizeof (VendorCodeBytes)                                            = 00000000
-EFI_CAPSULE_HEADER.CapsuleGuid      = 6DCBD5ED-E82D-4C44-BDA1-7194199AD92A
-EFI_CAPSULE_HEADER.HeaderSize       = 00000020
-EFI_CAPSULE_HEADER.Flags            = 00050000
-  OEM Flags                         = 0000
-  CAPSULE_FLAGS_PERSIST_ACROSS_RESET
-  CAPSULE_FLAGS_INITIATE_RESET
+...
+...
 EFI_CAPSULE_HEADER.CapsuleImageSize = 00001B5D
 sizeof (Payload)                    = 00001B3D
 Write binary output file capsule.out.bin
@@ -121,7 +103,60 @@ Success
 
 The capsule file `capsule.out.bin` is generated and should be used as input file for [fwupdate](https://github.com/rhboot/fwupdate) tool on the target device to trigger capsule update.
 
+### Stitching tool
+
+The stitch tool can change or merge a supported sub-region file inside a full IFWI image based on UEFI Firmware Volume format.
+
+To get a list of supported sub-regions, run:
+
+```
+$ python3 siip_stitch.py -h
+
+usage: siip_stitch [-h] -ip ipname [-k PRIVATE_KEY] [-v] [-o FileName]
+                   IFWI_IN IPNAME_IN
+
+...
+...
+Supported Sub-Region Names: ['pse', 'fkm', 'tmac', 'tsnip', 'tsn', 'tcc',
+'oob', 'oob_rootca', 'vbt', 'gop', 'gfxpeim']
+```
+
+To stitch a sub-region, provide the sub-region name (e.g. `pse`), IFWI image to be updated, and the sub-region file. For example:
+
+```
+$python3 siip_stitch.py -ip pse -o new.ifwi.bin ifwi.bin pse.bin
+
+...
+siip_stitch INFO *** Replacing pse ...
+...
+...
+Decoding
+Decoding
+Decoding
+Decoding
+Decoding
+Decoding
+Decoding
+Decoding
+Create New FD file successfully.
+
+Done!
+
+```
+
+### Signing tool
+
+The signing tool generates security signatures and auxiliary data for a _payload_ file. When BIOS loads the payload (code or data) during boot, it verifies the payload authenticity and integrity first.
+
+For example, to sign an image using RSA private key `priv3k.pem`, run:
+
+```
+python3 siip_sign.py sign -i pse.bin -k priv3k.pem -o pse.signed.bin
+```
+
+The signed image (e.g. `pse.signed.bin`), is the input file to be either stitched into IFWI image, or for creating a capsule image for firmware update.
+
+
 ## License
 
 See [LICENSE.txt](LICENSE.txt) for details.
-
