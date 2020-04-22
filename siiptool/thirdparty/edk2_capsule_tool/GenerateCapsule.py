@@ -86,7 +86,7 @@ def SignPayloadSignTool (Payload, ToolPath, PfxFile):
     # Sign the input file using the specified private key
     #
     try:
-        Process = subprocess.Popen (Command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True)
+        Process = subprocess.Popen (Command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False)
         Result = Process.communicate('')
     except:
         shutil.rmtree (TempDirectoryName)
@@ -130,7 +130,7 @@ def SignPayloadOpenSsl (Payload, ToolPath, SignerPrivateCertFile, OtherPublicCer
     # Sign the input file using the specified private key and capture signature from STDOUT
     #
     try:
-        Process = subprocess.Popen (Command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True)
+        Process = subprocess.Popen (Command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False)
         Result = Process.communicate(input = Payload)
         Signature = Result[0]
     except:
@@ -178,7 +178,7 @@ def VerifyPayloadOpenSsl (Payload, CertData, ToolPath, SignerPrivateCertFile, Ot
     # Verify signature
     #
     try:
-        Process = subprocess.Popen (Command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = True)
+        Process = subprocess.Popen (Command, stdin = subprocess.PIPE, stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell = False)
         Result = Process.communicate(input = CertData)
     except:
         shutil.rmtree (TempDirectoryName)
