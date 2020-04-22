@@ -61,12 +61,21 @@ def search_for_fv(inputfile, ipname):
     logger.info("\nFinding the Firmware Volume")
     fw_vol = None
 
-    command = [FMMT, "-v", os.path.abspath(inputfile), ">", "tmp.fmmt.txt"]
+    command = [FMMT, "-v", os.path.abspath(inputfile)]
 
     try:
         os.environ["PATH"] += os.pathsep + TOOLS_DIR
+        logger.info("TOOLS_DIR  : %s" % TOOLS_DIR)
+        logger.info("PATH       : %s" % os.environ["PATH"])
         logger.info("\n{}".format(" ".join(command)))
-        subprocess.check_call(" ".join(command), shell=True, timeout=60)
+
+        p = subprocess.run(command,
+                           shell=False,
+                           check=True,
+                           stdout=subprocess.PIPE,
+                           universal_newlines=True,
+                           timeout=60)
+
     except subprocess.CalledProcessError as status:
         logger.warning("\nError using FMMT: {}".format(status))
         return 1, fw_vol
@@ -86,20 +95,20 @@ def search_for_fv(inputfile, ipname):
     # search FFS by name in firmware volumes
     fwvol_found = False
 
-    with open("tmp.fmmt.txt", "r") as searchfile:
-        for line in searchfile:
-            match_fv = re.match(r"(^FV\d+) :", line)
-            if match_fv:
-                fwvol_found = True
-                fw_vol = match_fv.groups()[0]
-                continue
-            if fwvol_found:
-                match_name = re.match(r'File "(%s)"' % ui_name, line.lstrip())
-                if match_name:
-                    break
-        else:
-            fw_vol = None  # firmware volume was not found.
-            logger.warning("\nCould not find file {} in {}".format(ui_name, inputfile))
+    for line in p.stdout.splitlines():
+        print(">> %s" % line)
+        match_fv = re.match(r"(^FV\d+) :", line)
+        if match_fv:
+            fwvol_found = True
+            fw_vol = match_fv.groups()[0]
+            continue
+        if fwvol_found:
+            match_name = re.match(r'File "(%s)"' % ui_name, line.lstrip())
+            if match_name:
+                break
+    else:
+        fw_vol = None  # firmware volume was not found.
+        logger.warning("\nCould not find file {} in {}".format(ui_name, inputfile))
 
     return 0, fw_vol
 
