@@ -16,6 +16,7 @@ import argparse
 import shutil
 import re
 import uuid
+import click
 from pathlib import Path
 
 
@@ -145,7 +146,8 @@ def file_not_exist(file):
     """Verify that file does not exist."""
 
     if os.path.isfile(file):
-        raise argparse.ArgumentTypeError("{} exist!".format(file))
+        if not (click.confirm("\n{} file arleady exist! Do you want to overwrite it".format(file), abort=False)):
+           raise argparse.ArgumentTypeError("{} exist!".format(file))
     return file
 
 
