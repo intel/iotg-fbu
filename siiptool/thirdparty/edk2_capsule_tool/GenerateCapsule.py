@@ -35,10 +35,10 @@ import os
 import tempfile
 import shutil
 import platform
-from Common.Uefi.Capsule.UefiCapsuleHeader import UefiCapsuleHeaderClass
-from Common.Uefi.Capsule.FmpCapsuleHeader  import FmpCapsuleHeaderClass
-from Common.Uefi.Capsule.FmpAuthHeader     import FmpAuthHeaderClass
-from Common.Edk2.Capsule.FmpPayloadHeader  import FmpPayloadHeaderClass
+from .Common.Uefi.Capsule.UefiCapsuleHeader import UefiCapsuleHeaderClass
+from .Common.Uefi.Capsule.FmpCapsuleHeader  import FmpCapsuleHeaderClass
+from .Common.Uefi.Capsule.FmpAuthHeader     import FmpAuthHeaderClass
+from .Common.Edk2.Capsule.FmpPayloadHeader  import FmpPayloadHeaderClass
 
 #
 # Globals for help information
@@ -192,7 +192,8 @@ def VerifyPayloadOpenSsl (Payload, CertData, ToolPath, SignerPrivateCertFile, Ot
     shutil.rmtree (TempDirectoryName)
     return Payload
 
-if __name__ == '__main__':
+
+def generate_capsule(arguments=None):
     def convert_arg_line_to_args(arg_line):
         for arg in arg_line.split():
             if not arg.strip():
@@ -296,7 +297,7 @@ if __name__ == '__main__':
     #
     # Parse command line arguments
     #
-    args = parser.parse_args()
+    args = parser.parse_args(args=arguments)
 
     #
     # Perform additional argument verification
@@ -553,3 +554,7 @@ if __name__ == '__main__':
 
     if args.Verbose:
         print('Success')
+
+
+if __name__ == '__main__':
+    generate_capsule()
