@@ -37,7 +37,7 @@ from common.banner import banner
 import common.logging as logging
 
 __prog__ = "siip_stitch"
-__version__ = "0.7.4"
+__version__ = "0.7.5"
 TOOLNAME = "SIIP Stitching Tool"
 
 banner(TOOLNAME, __version__)
