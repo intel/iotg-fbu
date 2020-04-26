@@ -18,7 +18,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import common.subregion_descriptor as subrgn_descrptr
 import common.subregion_image as sbrgn_image
 import common.utilities as utils
-from common.tools_path import EDK2_CAPSULE_TOOL
+import thirdparty.edk2_capsule_tool.GenerateCapsule as generate_capsule_tool
 from common.banner import banner
 import common.logging as logging
 
@@ -141,14 +141,13 @@ if __name__ == "__main__":
     generate_sub_region_fv(sub_region_image_file, sub_region_desc,
                            sub_region_fv_file)
 
-    gen_cap_cmd = ["python", EDK2_CAPSULE_TOOL]
-    gen_cap_cmd += ["--encode"]
-    gen_cap_cmd += ["--guid", sub_region_desc.s_fmp_guid]
-    gen_cap_cmd += ["--fw-version", str(sub_region_desc.version)]
-    gen_cap_cmd += ["--lsv", "0"]
-    gen_cap_cmd += ["--capflag", "PersistAcrossReset"]
-    gen_cap_cmd += ["--capflag", "InitiateReset"]
-    gen_cap_cmd += ["-o", args.OutputCapsuleFile]
+    gen_cap_args = ["--encode"]
+    gen_cap_args += ["--guid", sub_region_desc.s_fmp_guid]
+    gen_cap_args += ["--fw-version", str(sub_region_desc.version)]
+    gen_cap_args += ["--lsv", "0"]
+    gen_cap_args += ["--capflag", "PersistAcrossReset"]
+    gen_cap_args += ["--capflag", "InitiateReset"]
+    gen_cap_args += ["-o", args.OutputCapsuleFile]
     if all(
             [
                 args.OpenSslSignerPrivateCertFile,
@@ -156,10 +155,10 @@ if __name__ == "__main__":
                 args.OpenSslTrustedPublicCertFile
             ]
     ):
-        gen_cap_cmd += ["--signer-private-cert",
+        gen_cap_args += ["--signer-private-cert",
                         args.OpenSslSignerPrivateCertFile]
-        gen_cap_cmd += ["--other-public-cert", args.OpenSslOtherPublicCertFile]
-        gen_cap_cmd += ["--trusted-public-cert",
+        gen_cap_args += ["--other-public-cert", args.OpenSslOtherPublicCertFile]
+        gen_cap_args += ["--trusted-public-cert",
                         args.OpenSslTrustedPublicCertFile]
     elif any(
             [
@@ -170,14 +169,13 @@ if __name__ == "__main__":
     ):
         print('All-or-none of the certificate files must be provided.')
         exit(2)
-
-    gen_cap_cmd += ["-v"]
+    gen_cap_args += ["-v"]
 
     if args.SigningToolPath is not None:
-        gen_cap_cmd += ["--signing-tool-path", args.SigningToolPath]
-    gen_cap_cmd += [sub_region_fv_file]
+        gen_cap_args += ["--signing-tool-path", args.SigningToolPath]
+    gen_cap_args += [sub_region_fv_file]
 
-    status = utils.execute_cmds(logger, [gen_cap_cmd])
+    status = generate_capsule_tool.generate_capsule(gen_cap_args)
 
     # Creating list of files to remove
     to_remove = glob.glob("tmp.*")
