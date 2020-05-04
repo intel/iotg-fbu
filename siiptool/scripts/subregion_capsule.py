@@ -14,7 +14,7 @@ import os
 import argparse
 import glob
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import common.subregion_descriptor as subrgn_descrptr
 import common.subregion_image as sbrgn_image
 import common.utilities as utils
