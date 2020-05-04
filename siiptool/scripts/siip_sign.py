@@ -879,6 +879,7 @@ def main():
         "-o",
         "--output-file",
         type=str,
+        required=True,
         help="Output FKM file"
     )
     fkmp.set_defaults(func=cmd_fkmgen)
