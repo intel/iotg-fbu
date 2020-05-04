@@ -13,6 +13,7 @@ import sys
 import os
 import argparse
 import glob
+import subprocess
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import common.subregion_descriptor as subrgn_descrptr
@@ -132,6 +133,17 @@ def create_arg_parser():
 
 
 if __name__ == "__main__":
+
+    # Check if openssl is installed
+    try:
+        p = subprocess.run(['openssl', 'version'],
+                            stdout=subprocess.PIPE,
+                            universal_newlines=True)
+        print("openssl version: {}".format(p.stdout))
+    except:
+        print("OpenSSL is not installed or missing in PATH!\n")
+        exit(2)
+
     parser = create_arg_parser()
     args = parser.parse_args()
     gen_cap_args = []
