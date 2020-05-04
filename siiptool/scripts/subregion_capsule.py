@@ -101,6 +101,7 @@ def create_arg_parser():
     )
     my_parser.add_argument(
         "-o", "--output", dest="OutputCapsuleFile",
+        required=True,
         help="Output capsule filename."
     )
     my_parser.add_argument(
