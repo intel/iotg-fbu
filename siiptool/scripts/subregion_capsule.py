@@ -133,21 +133,7 @@ def create_arg_parser():
 if __name__ == "__main__":
     parser = create_arg_parser()
     args = parser.parse_args()
-
-    sub_region_fv_file = os.path.join(os.path.curdir, "SubRegionFv.fv")
-    sub_region_image_file = os.path.join(os.path.curdir, "SubRegionImage.bin")
-    sub_region_desc = subrgn_descrptr.SubRegionDescriptor()
-    sub_region_desc.parse_json_data(args.InputFile)
-    generate_sub_region_fv(sub_region_image_file, sub_region_desc,
-                           sub_region_fv_file)
-
-    gen_cap_args = ["--encode"]
-    gen_cap_args += ["--guid", sub_region_desc.s_fmp_guid]
-    gen_cap_args += ["--fw-version", str(sub_region_desc.version)]
-    gen_cap_args += ["--lsv", "0"]
-    gen_cap_args += ["--capflag", "PersistAcrossReset"]
-    gen_cap_args += ["--capflag", "InitiateReset"]
-    gen_cap_args += ["-o", args.OutputCapsuleFile]
+    gen_cap_args = []
     if all(
             [
                 args.OpenSslSignerPrivateCertFile,
@@ -156,10 +142,10 @@ if __name__ == "__main__":
             ]
     ):
         gen_cap_args += ["--signer-private-cert",
-                        args.OpenSslSignerPrivateCertFile]
+                         args.OpenSslSignerPrivateCertFile]
         gen_cap_args += ["--other-public-cert", args.OpenSslOtherPublicCertFile]
         gen_cap_args += ["--trusted-public-cert",
-                        args.OpenSslTrustedPublicCertFile]
+                         args.OpenSslTrustedPublicCertFile]
     elif any(
             [
                 args.OpenSslSignerPrivateCertFile,
@@ -169,6 +155,21 @@ if __name__ == "__main__":
     ):
         print('All-or-none of the certificate files must be provided.')
         exit(2)
+
+    sub_region_fv_file = os.path.join(os.path.curdir, "SubRegionFv.fv")
+    sub_region_image_file = os.path.join(os.path.curdir, "SubRegionImage.bin")
+    sub_region_desc = subrgn_descrptr.SubRegionDescriptor()
+    sub_region_desc.parse_json_data(args.InputFile)
+    generate_sub_region_fv(sub_region_image_file, sub_region_desc,
+                           sub_region_fv_file)
+
+    gen_cap_args += ["--encode"]
+    gen_cap_args += ["--guid", sub_region_desc.s_fmp_guid]
+    gen_cap_args += ["--fw-version", str(sub_region_desc.version)]
+    gen_cap_args += ["--lsv", "0"]
+    gen_cap_args += ["--capflag", "PersistAcrossReset"]
+    gen_cap_args += ["--capflag", "InitiateReset"]
+    gen_cap_args += ["-o", args.OutputCapsuleFile]
     gen_cap_args += ["-v"]
 
     if args.SigningToolPath is not None:
