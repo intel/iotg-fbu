@@ -21,7 +21,7 @@ import struct
 from ctypes import Structure
 from ctypes import c_char, c_uint32, c_uint8, c_uint64, c_uint16, sizeof, ARRAY
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common.banner import banner
 import common.logging as logging
 

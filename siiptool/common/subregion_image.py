@@ -10,7 +10,7 @@ import os
 import struct
 import sys
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from common import subregion_descriptor as subrgn_descptr
 from common.utilities import get_key_and_value
