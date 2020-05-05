@@ -269,6 +269,7 @@ def stitch_and_update(ifwi_file, ip_name, file_list, out_file):
 
         if status == 0:
             logger.critical("\nError: No Firmware volume found")
+            status = 1
         sys.exit(status)
 
     # firmware volume was found
@@ -279,6 +280,8 @@ def stitch_and_update(ifwi_file, ip_name, file_list, out_file):
 
     # Add firmware volume header and merge it in out_file
     status = merge_and_replace(file_list, ip_name, fw_volume)
+    if status != 0:
+        sys.exit(status)
 
 
 def update_obb_digest(ifwi_file, digest_file):
