@@ -9,6 +9,7 @@ import os
 import sys
 import argparse
 import uuid
+import pathlib
 
 from cryptography.hazmat.primitives import hashes as hashes
 from cryptography.hazmat.primitives import serialization as serialization
@@ -123,6 +124,11 @@ def main():
 
     # Prepend GUID (16B), public key modulus (256B) and signature (256B)
     if args.encode and args.privkey_file:
+        if getattr(sys, 'frozen', False):
+            privkey_file_name = os.path.basename(args.privkey_file)
+            base_dir = pathlib.Path(sys.executable).parent.absolute()
+            args.privkey_file = os.path.join(base_dir, privkey_file_name)
+
         pubkey = get_pubkey_from_privkey(args.privkey_file)
         (signature, key) = compute_signature(in_data, args.privkey_file)
 
