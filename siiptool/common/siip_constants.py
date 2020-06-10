@@ -53,6 +53,26 @@ IP_OPTIONS = {
         [None],
         ["free", "7F6AD829-15E9-4FDE-9DD3-0548BB7F56F3", None],
     ],
+    "tccc": [
+        ["ui", "IntelFvTccCacheCfg"],
+        ["raw", "PI_NONE"],
+        [None],
+        ["free", "0C1A77B3-FD36-46F9-8AD0-598367053641", None],
+    ],
+    "tccb": [
+        ["ui", "IntelFvTccBuffer"],
+        ["raw", "PI_NONE"],
+        [None],
+        ["free", "F20527A7-B7B0-4630-A6BD-ED10CD48B94F", None],
+    ],
+    "tccp": [
+        ["ui", "IntelFvPtcmBinary"],
+        ["raw", "PI_NONE"],
+        [None],
+        ["lzma", "-e"],  # Compressed section
+        ["guid", GUID_DEFINED_LZMA, "PROCESSING_REQUIRED"],
+        ["free", "0240AD7B-00DA-43AF-9ED4-73B8DF48CD0B", None],
+    ],
     "oob": [
         ["ui", "IntelOobConfig"],
         ["raw", "PI_NONE"],
