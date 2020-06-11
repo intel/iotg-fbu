@@ -132,7 +132,7 @@ def ip_inputfiles(filenames, ipname):
     inputfiles = [None, "tmp.raw", "tmp.ui", "tmp.all"]
 
     num_infiles = 1
-    if ipname in ["pse", "fkm"]:
+    if ipname in ["pse", "fkm", "tccp"]:
         inputfiles.extend(["tmp.cmps", "tmp.guid"])
     elif ipname in ["gop", "gfxpeim"]:
         inputfiles.remove("tmp.raw")
