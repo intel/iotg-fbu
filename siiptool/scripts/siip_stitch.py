@@ -151,15 +151,6 @@ def merge_and_replace(filename, guid_values, fwvol):
     return status
 
 
-def file_not_exist(file):
-    """Verify that file does not exist."""
-
-    if os.path.isfile(file):
-        if not (click.confirm("\n{} file arleady exist! Do you want to overwrite it".format(file), abort=False)):
-           raise argparse.ArgumentTypeError("{} exist!".format(file))
-    return file
-
-
 def check_key(file):
     """ Check if file exist, empty, or over max size"""
 
@@ -245,7 +236,7 @@ def parse_cmdline():
         "-o",
         "--outputfile",
         dest="OUTPUT_FILE",
-        type=file_not_exist,
+        type=utils.file_not_exist,
         help="IFWI binary file with the IP replaced with the IPNAME_IN",
         metavar="FileName",
         default="BIOS_OUT.bin",
