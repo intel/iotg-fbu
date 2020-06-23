@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2019, Intel Corporation. All rights reserved.
+# Copyright (c) 2020, Intel Corporation. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
@@ -19,6 +19,7 @@ import common.subregion_descriptor as subrgn_descrptr
 import common.subregion_image as sbrgn_image
 import common.utilities as utils
 import thirdparty.edk2_capsule_tool.GenerateCapsule as generate_capsule_tool
+from common.siip_constants import VERSION as __version__
 from common.banner import banner
 import common.logging as logging
 
@@ -31,7 +32,6 @@ if sys.version_info < (3, 6):
 # Globals for help information
 #
 __prog__ = "subregion_capsule"
-__version__ = "0.7.5"
 
 TOOLNAME = "Sub-Region Capsule Tool"
 

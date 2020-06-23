@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2019, Intel Corporation. All rights reserved.
+# Copyright (c) 2020, Intel Corporation. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
@@ -33,11 +33,12 @@ from common.firmware_volume import FirmwareDevice
 from common.siip_constants import IP_OPTIONS
 from common.tools_path import FMMT, GENFV, GENFFS, GENSEC, LZCOMPRESS, TOOLS_DIR
 from common.tools_path import RSA_HELPER, FMMT_CFG
+from common.siip_constants import VERSION as __version__
 from common.banner import banner
 import common.logging as logging
 
 __prog__ = "siip_stitch"
-__version__ = "0.7.5"
+
 TOOLNAME = "SIIP Stitching Tool"
 
 banner(TOOLNAME, __version__)
@@ -152,45 +153,6 @@ def merge_and_replace(filename, guid_values, fwvol):
     return status
 
 
-def check_key(file):
-    """ Check if file exist, empty, or over max size"""
-
-    if os.path.isfile(file):
-        FIRSTLINE = "-----BEGIN RSA PRIVATE KEY-----"
-        LASTLINE = "-----END RSA PRIVATE KEY-----"
-        size = os.path.getsize(file)
-        if size > 2000 or size == 0:
-            raise argparse.ArgumentTypeError("size of {} is {} the key file size must be greater than 0 and less than 2k!".format(file, size))
-
-        else:
-            with open(file, "r") as key:
-                key_lines = key.readlines()
-            if not ((FIRSTLINE in key_lines[0]) and (LASTLINE in key_lines[-1])):
-                raise argparse.ArgumentTypeError("{} is not an RSA private key".format(file))
-    else:
-        raise argparse.ArgumentTypeError("{} does not exist".format(file))
-
-    return file
-
-
-def check_file_size(files):
-    """ Check if file is empty or greater than IFWI/BIOS file"""
-
-    bios_size = os.path.getsize(files[0])
-
-    for file in files:
-        filesize = os.path.getsize(file)
-        if filesize != 0:
-            if not (filesize <= bios_size):
-                logger.warning("\n{} file is size {} file exceeds the size of the BIOS/IFWI file {}!".format(file, filesize, files[0]))
-                return 1
-        else:
-            logger.warning("\n{} file is empty!".format(file))
-            return 1
-
-    return 0
-
-
 def parse_cmdline():
     """ Parsing and validating input arguments."""
 
@@ -223,7 +185,6 @@ def parse_cmdline():
     parser.add_argument(
         "-k",
         "--private-key",
-        type=check_key,
         help="Private RSA key in PEM format. Note: Key is required for stitching GOP features",
     )
     parser.add_argument(
@@ -237,7 +198,6 @@ def parse_cmdline():
         "-o",
         "--outputfile",
         dest="OUTPUT_FILE",
-        type=utils.file_not_exist,
         help="IFWI binary file with the IP replaced with the IPNAME_IN",
         metavar="FileName",
         default="BIOS_OUT.bin",
@@ -333,7 +293,10 @@ def main():
     try:
         parser = parse_cmdline()
         args = parser.parse_args()
-
+   
+        outfile = Path(args.OUTPUT_FILE).resolve()
+        outfile = utils.file_not_exist(outfile, logger)
+        
         for f in (FMMT, GENFV, GENFFS, GENSEC, LZCOMPRESS, RSA_HELPER, FMMT_CFG):
             if not os.path.exists(f):
                 raise FileNotFoundError("Thirdparty tool not found ({})".format(f))
@@ -365,10 +328,13 @@ def main():
                 sys.exit(2)
             else:
                 key_file = Path(args.private_key).resolve()
+                status = utils.check_key(key_file, "rsa", logger)
+                if status != 0:
+                    sys.exit(status)
                 filenames.append(key_file)
 
         # Verify file is not empty or the IP files are smaller than the input file
-        status = check_file_size(filenames)
+        status = utils.check_file_size(logger, filenames)
         if status != 0:
             sys.exit(status)
 
@@ -379,7 +345,7 @@ def main():
             filenames.remove(key_file)
 
         logger.info("*** Replacing {} ...".format(args.ipname))
-        stitch_and_update(args.IFWI_IN.name, args.ipname, filenames, args.OUTPUT_FILE)
+        stitch_and_update(args.IFWI_IN.name, args.ipname, filenames, outfile)
 
         # Update OBB digest after stitching any data inside OBB region
         if args.ipname in ["gop", "vbt", "gfxpeim"]:
@@ -388,12 +354,12 @@ def main():
 
             to_remove.append(digest_file)
 
-            update_obb_digest(args.OUTPUT_FILE, digest_file)
+            update_obb_digest(outfile, digest_file)
 
-            filenames = [str(Path(f).resolve()) for f in [args.OUTPUT_FILE, digest_file]]
+            filenames = [str(Path(f).resolve()) for f in [outfile, digest_file]]
 
             logger.info("*** Replacing {} ...".format(ipname))
-            stitch_and_update(args.OUTPUT_FILE, ipname, filenames, args.OUTPUT_FILE)
+            stitch_and_update(outfile, ipname, filenames, outfile)
     finally:
         utils.cleanup(to_remove)
 
