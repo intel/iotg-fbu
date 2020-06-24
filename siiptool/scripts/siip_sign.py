@@ -363,8 +363,12 @@ def calculate_sum32(data):
     return result32
 
 
-def build_fkm(privkey, pubkey_list, hash_option, outfile):
+def build_fkm(privkey, pubkey_list, hash_option, outfile, svn):
     """Generate FKM data from a list of public keys"""
+
+    if (svn < 0 or svn > 15):
+        logger.critical("Bad SVN value. 0-15 only.")
+        exit(2)
 
     fkm_data = bytearray(sizeof(FIRMWARE_KEY_MANIFEST))
 
@@ -387,7 +391,7 @@ def build_fkm(privkey, pubkey_list, hash_option, outfile):
     # 3: SIIP OEM Firmware Manifest; 4: SIIP Intel Firmware Manifest
     fkm.extension_type = 14  # CSE Key Manifest Extension Type
     fkm.key_manifest_type = 4
-    fkm.key_manifest_svn = 0
+    fkm.key_manifest_svn = svn
     fkm.oem_id = 0
     fkm.key_manifest_id = 0  # Not used
     fkm.num_of_keys = FIRMWARE_KEY_MANIFEST.number_of_keys
@@ -514,8 +518,12 @@ def parse_cpd_header(cpd_data):
     return files
 
 
-def create_image(payload_file, outfile, privkey, hash_option):
+def create_image(payload_file, outfile, privkey, hash_option, svn):
     """Create a new image with manifest data in front it"""
+
+    if (svn < 0 or svn > 255):
+        logger.critical("Bad SVN value. 0-255 only.")
+        exit(2)
 
     digest_size = HASH_CHOICES[hash_option][0].digest_size
 
@@ -580,7 +588,7 @@ def create_image(payload_file, outfile, privkey, hash_option):
     fbm.package_name = 0x45534F24  # '$OSE'
     fbm.version_control_num = 0
     fbm.usage_bitmap[7] = 0x08  # Bit 59: OSE firmware
-    fbm.svn = 0
+    fbm.svn = svn
     fbm.fw_type = 0
     fbm.fw_subtype = 0
     fbm.reserved = 0
@@ -852,7 +860,8 @@ def main():
         build_fkm(args.private_key,
                   [args.pubkey_pem_file],
                   args.hash_option,
-                  args.output_file)
+                  args.output_file,
+                  args.svn)
 
     fkmp = sp.add_parser("fkmgen", help="Generate Firmware Key Manifest (FKM)")
     fkmp.add_argument(
@@ -882,14 +891,23 @@ def main():
         required=True,
         help="Output FKM file"
     )
+    fkmp.add_argument(
+        "-n",
+        "--svn",
+        default=0,
+        type=int,
+        help="Secure Version Number (SVN): 0-15 (default is 0)",
+    )
     fkmp.set_defaults(func=cmd_fkmgen)
 
     def cmd_create(args):
-        logger.info("Signing image using key %s ..." % args.private_key)
+        logger.info("Signing image using key %s (svn=%d)..." % (
+                    args.private_key, args.svn))
         create_image(args.input_file,
                      args.output_file,
                      args.private_key,
-                     args.hash_option)
+                     args.hash_option,
+                     args.svn)
 
     signp = sp.add_parser("sign", help="Sign an image")
     signp.add_argument(
@@ -915,6 +933,13 @@ def main():
         default="sha384",
         choices=list(HASH_CHOICES.keys()),
         help="Hashing algorithm",
+    )
+    signp.add_argument(
+        "-n",
+        "--svn",
+        default=0,
+        type=int,
+        help="Secure Version Number (SVN): 0-255 (default is 0)",
     )
     signp.set_defaults(func=cmd_create)
 
