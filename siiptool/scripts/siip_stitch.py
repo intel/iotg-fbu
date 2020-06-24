@@ -49,6 +49,7 @@ if sys.version_info < (3, 6):
 
 GUID_FVADVANCED = uuid.UUID("B23E7388-9953-45C7-9201-0473DDE5487A")
 GUID_FVSECURITY = uuid.UUID("5A9A8B4E-149A-4CB2-BDC7-C8D62DE2C8CF")
+GUID_FVOSBOOT = uuid.UUID("13BF8810-75FD-4B1A-91E6-E16C4201F80A")
 
 def search_for_fv(inputfile, ipname):
     """Search for the firmware volume."""
@@ -292,7 +293,7 @@ def update_obb_digest(ifwi_file, digest_file):
     bios.ParseFd()
 
     # Extract FVs belongs to OBB
-    obb_fv_idx = bios.get_fv_index_by_guid(GUID_FVSECURITY.bytes_le)
+    obb_fv_idx = bios.get_fv_index_by_guid(GUID_FVOSBOOT.bytes_le)
     if not (0 < obb_fv_idx < len(bios.FvList)):
         raise ValueError("Starting OBB FV is not found")
 
@@ -300,13 +301,14 @@ def update_obb_digest(ifwi_file, digest_file):
     obb_offset = bios.FvList[obb_fv_idx].Offset
     obb_length = 0
     if bios.is_fsp_wrapper():
-        # FVSECURITY + FVOSBOOT + FVUEFIBOOT_PRIME + FVADVANCED + FVPOSTMEMORY + FSPS
+        # FVOSBOOT + FVUEFIBOOT_PRIME + FVADVANCED + FVPOSTMEMORY + FSPS
         logger.info("FSP Wrapper BIOS")
-        obb_fv_end = obb_fv_idx + 6
-    else:
-        # FVSECURITY + FVOSBOOT + FVUEFIBOOT_PRIME + FVADVANCED + FVPOSTMEMORY
-        logger.info("EDK2 BIOS")
         obb_fv_end = obb_fv_idx + 5
+    else:
+        # FVOSBOOT + FVUEFIBOOT_PRIME + FVADVANCED + FVPOSTMEMORY
+        logger.info("EDK2 BIOS")
+        obb_fv_end = obb_fv_idx + 4
+
     for fv in bios.FvList[obb_fv_idx:obb_fv_end]:
         obb_length += len(fv.FvData)
 
