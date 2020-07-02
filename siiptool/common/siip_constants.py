@@ -5,6 +5,10 @@
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
+""" Tool Version Number """
+
+VERSION = "0.7.5"
+
 """Sub-region configuration for different types of code/data
 """
 

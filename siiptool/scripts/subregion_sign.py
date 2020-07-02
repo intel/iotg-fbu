@@ -20,6 +20,7 @@ import struct
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from common.siip_constants import VERSION as __version__
 from common.banner import banner
 from common.siip_constants import IP_OPTIONS
 import common.utilities as utils
@@ -28,7 +29,6 @@ import common.logging as logging
 LOGGER = logging.getLogger("subregion_sign")
 
 __prog__ = "subregion_sign"
-__version__ = "0.7.5"
 
 TOOLNAME = "Sub-Region Signing Tool"
 
@@ -144,10 +144,15 @@ def get_certifcation_info(ipname):
 
 def build_subreg_signed_file(cert_struct, outfile):
     """ build output file """
+    try:
+        with open(outfile, mode="wb") as signed_file:
+            signed_file.write(cert_struct)
 
-    with open(outfile, mode="wb") as signed_file:
-        signed_file.write(cert_struct)
-
+    except ValueError:
+        LOGGER.critical(
+            "\nsubregion_sign.py: can not write payload file: %s", outfile
+        )
+        sys.exit(2)
 
 def read_file(inputfile):
     """ read input file to bytes """
@@ -168,19 +173,13 @@ def read_file(inputfile):
 def generate_signature(tool_path, signerfile, certfile, subregion):
     """ signed input file """
 
-    
-    # Convert to absolute path for openSSL
-    cert = os.path.abspath(certfile)
-    signer = os.path.abspath(signerfile)
-    
-    
 
     # Check if openssl is installed
     path = utils.check_for_tool('openssl', 'version', tool_path)
 
     # Build openssl command to using sign to get signature
-    openssl_cmd = f'{path} smime -sign -binary -outform DER -md sha256 -signer {signer} -certfile {cert}'
-  
+    openssl_cmd = f'{path} smime -sign -binary -outform DER -md sha256 -signer {signerfile} -certfile {certfile}'
+
     #
     # Sign the input file using the specified private key and capture signature from STDOUT
     #
@@ -195,7 +194,7 @@ def generate_signature(tool_path, signerfile, certfile, subregion):
         )
         signature = ssl_process.stdout
 
-    except ValueError:
+    except:
         LOGGER.warning("\nsubregion_sign: can not run openssl.")
         sys.exit(1)
 
@@ -232,7 +231,6 @@ def create_arg_parser():
         "-o",
         "--output",
         dest="signed_file",
-        type=utils.file_not_exist,
         help="Output capsule filename.",
         metavar="Filename",
         default="SIGNED_OUT.bin",
@@ -288,22 +286,47 @@ def main():
     parser = create_arg_parser()
     args = parser.parse_args()
 
+    # Use absolute path for openSSL
+    sbrgn_file = Path(args.subregion_file).resolve()
+    signer_file = Path(args.signerfile).resolve()
+    cert_file = Path(args.certfile).resolve()
+    outfile = Path(args.signed_file).resolve()
+
+    filenames = [str(sbrgn_file), str(signer_file), str(cert_file)]
+
+    #Verify file input file exist
+    status = utils.file_exist(filenames, LOGGER)
+    if status != 0:
+        sys.exit(status)
+
+    # Verify file is not empty or the IP files are smaller than the input file
+    status = utils.check_file_size(LOGGER, filenames)
+    if status != 0:
+        sys.exit(status)
+
+    #Verify certification files
+    status = utils.check_key(cert_file, "pubcert", LOGGER)
+    if status != 0:
+        sys.exit(status)
+
+    status = utils.check_key(signer_file, "winsigner", LOGGER)
+    if status != 0:
+        sys.exit(status)
+
+    outfile = utils.file_not_exist(outfile, LOGGER)
+
     cert_info = get_certifcation_info(args.ipname)
 
     efi_subreg_authen = EfiSubregAuthenClass(cert_info)
 
     # read input file to store into structure
-    payload = read_file(args.subregion_file)
+    payload = read_file(sbrgn_file)
     efi_subreg_authen.payload = payload
-    
 
-    # Convert to absolute path for openSSL
-    certfile = os.path.abspath(args.certfile)
-    signerfile = os.path.abspath(args.signerfile)
 
     # calculate the signature store in structure
     cert_data = generate_signature(
-        args.tool_path, args.signerfile, args.certfile, payload
+        args.tool_path, signer_file, cert_file, payload
     )
     efi_subreg_authen.cert_data = cert_data
 
@@ -314,7 +337,8 @@ def main():
         efi_subreg_authen.dump_info()
 
     # create output EFI subregion authentication header and signature and original file
-    build_subreg_signed_file(efi_signed_data, args.signed_file)
+    build_subreg_signed_file(efi_signed_data, str(outfile))
+    print("Signed {} sub-region({}) was successfully generated.".format(args.ipname, outfile))
 
 
 if __name__ == "__main__":

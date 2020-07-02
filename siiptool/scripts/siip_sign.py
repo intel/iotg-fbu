@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2019, Intel Corporation. All rights reserved.
+# Copyright (c) 2020, Intel Corporation. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 #
 
@@ -22,6 +22,7 @@ from ctypes import Structure
 from ctypes import c_char, c_uint32, c_uint8, c_uint64, c_uint16, sizeof, ARRAY
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from common.siip_constants import VERSION as __version__
 from common.banner import banner
 import common.logging as logging
 
@@ -49,7 +50,6 @@ except ImportError:
 
 
 __prog__ = "siip_sign"
-__version__ = "0.7.5"
 
 TOOLNAME = "SIIP Signing Tool"
 
