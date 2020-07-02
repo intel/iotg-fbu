@@ -69,7 +69,10 @@ def generate_exe():
                               r"--add-binary "
                               r"thirdparty/Bin/Win32/;thirdparty/Bin/Win32 "
                               r"--onefile --distpath ./bin")
-
+        subprocess.check_call(r"pyinstaller scripts/subregion_sign.py "
+                              r"--add-binary "
+                              r"thirdparty/Bin/Win32/;thirdparty/Bin/Win32 "
+                              r"--onefile --distpath ./bin")
     elif sys.platform == 'linux':
         subprocess.check_call(r"pyinstaller scripts/siip_sign.py "
                               r"--onefile --distpath ./bin",
@@ -80,6 +83,11 @@ def generate_exe():
                               r"--onefile --distpath ./bin",
                               shell=True)
         subprocess.check_call(r"pyinstaller scripts/subregion_capsule.py "
+                              r"--add-binary "
+                              r"thirdparty/Bin/Linux/:thirdparty/Bin/Linux "
+                              r"--onefile --distpath ./bin",
+                              shell=True)
+        subprocess.check_call(r"pyinstaller scripts/subregion_sign.py "
                               r"--add-binary "
                               r"thirdparty/Bin/Linux/:thirdparty/Bin/Linux "
                               r"--onefile --distpath ./bin",
