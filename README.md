@@ -159,4 +159,4 @@ The signed image (e.g. `pse.signed.bin`), is the input file to be either stitche
 
 ## License
 
-See [LICENSE.txt](LICENSE.txt) for details.
+See [LICENSE](LICENSE) for details.
