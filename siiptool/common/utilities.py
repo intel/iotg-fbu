@@ -51,7 +51,7 @@ def file_not_exist(file, log):
 
     if os.path.isfile(file):
         if not (click.confirm("\n{} file already exists! Do you want to overwrite it".format(file), abort=False)):
-           log.warning("%s file already exists. Exiting tool!", file)
+           log.critical("%s file already exists. Exiting tool!", file)
            sys.exit(2)
     return file
 
@@ -61,8 +61,8 @@ def file_exist(files,log):
       
     for file in files:
         if not os.path.isfile(file):
-            log.warning("\n{} file not found".format(file))
-            return 1
+            log.critical("\n{} file not found".format(file))
+            return 2
     return 0
 
 
@@ -75,94 +75,129 @@ def check_file_size(log, files):
         filesize = os.path.getsize(file)
         if filesize != 0:
             if not (filesize <= bios_size):
-                log.warning("\n{} file is size {} file exceeds the size of the BIOS/IFWI file {}!".format(file, filesize, files[0]))
-                return 1
+                log.critical("\n{} file is size {} file exceeds the size of the BIOS/IFWI file {}!".format(file, filesize, files[0]))
+                return 2
         else:
-            log.warning("\n{} file is empty!".format(file))
-            return 1
+            log.critical("\n{} file is empty!".format(file))
+            return 2
 
     return 0
 
+
 def check_key(file, key_type, log):
-    """ Check if file exist, empty, or over max size"""
+    """ Check if file exist, empty, or over max size and correct format"""
     # element[0][1] start of file; element[-1][0] is size of file
     KEY_TYPE = {
         "rsa": [
             "RSA private key",
-            ["-----BEGIN RSA PRIVATE KEY-----", 0],
-            ["-----END RSA PRIVATE KEY-----", -1],
-            [2000],
+            "-----BEGIN RSA PRIVATE KEY-----",
+            "-----END RSA PRIVATE KEY-----",
+            2000,
         ],
         "pubcert": [
             "Public Certificate",
-            ["-----BEGIN CERTIFICATE-----", 0],
-            ["-----END CERTIFICATE-----", -1],
-            [2000],
+            "-----BEGIN CERTIFICATE-----",
+            "-----END CERTIFICATE-----",
+            2500,
         ],
         "winsigner": [
             "Certificate Signer",
-            ["Bag Attributes", 0],
-            ["-----END PRIVATE KEY-----", -1],
-            ["localKeyID:", 1, 30],
-            ["subject=", 2],
-            ["issuer=", 3],
-            ["-----BEGIN CERTIFICATE-----", 4],
-            ["-----END CERTIFICATE-----", 28],
-            ["-----BEGIN PRIVATE KEY-----", 32],
-            [4000],
+           "Bag Attributes",
+           "-----END PRIVATE KEY-----",
+           "localKeyID:",
+           "subject=",
+           "issuer=",
+           "-----BEGIN CERTIFICATE-----",
+           "-----END CERTIFICATE-----",
+           "-----BEGIN PRIVATE KEY-----",
+            5500,
         ]
     }
-
+  
     if os.path.isfile(file):
 
         key_info = KEY_TYPE.get(key_type)
-        max_size = key_info[-1][0]
+        max_size = key_info[-1]
         size = os.path.getsize(file)
         key_name = key_info[0]
 
-        FIRSTLINE = key_info[1][0]
-        LASTLINE = key_info[2][0]
+        FIRSTLINE = key_info[1]
+        LASTLINE = key_info[2]
 
         if size > max_size or size == 0:
-           log.warning("size of {} is {} the key file size must be greater than 0 and less than 2k!".format(file, size))
-           return 1
+           log.critical("size of {} is {} the key file size must be greater than 0 and less than {}!".format(file, size, max_size))
+           return 2
         else:
             with open(file, "r") as key:
                 key_lines = key.readlines()
             if not ((FIRSTLINE in key_lines[0]) and (LASTLINE in key_lines[-1])):
-               log.warning("{} is not a {}".format(file, key_name))
-               #print("error")
-               return 1
+               log.critical("{} is not in the format of a {}".format(file, key_name))
+               return 2
 
-             # two localkeyId are the same, subject and issuer given, Cert begin and end in file, and Begin Key
+             # veirfy signer format
             if key_type == "winsigner":
-                status = 0
-                KEYID =key_info[3][0]
-                SUBJECT =key_info[4][0]
-                ISSUER = key_info[5][0]
-                BEGIN_CERT = key_info[6][0]
-                END_CERT = key_info[7][0]
-                BEGIN_KEY = key_info[8][0]
-                
-                if not ((KEYID in key_lines[key_info[3][1]]) and
-                 (key_lines[key_info[3][1]] == key_lines[key_info[3][2]])):
-                  status = 1
-                if not ((SUBJECT in key_lines[key_info[4][1]]) and 
-                  (ISSUER in key_lines[key_info[5][1]])):
-                  status = 1
-                if not ((BEGIN_CERT in key_lines[key_info[6][1]]) and 
-                (END_CERT in key_lines[key_info[7][1]])):
-                  status = 1
-                if not (BEGIN_KEY in key_lines[key_info[8][1]]):
-                    status = 1       
-                if status != 0 :
-                    log.warning("{} is not a {}".format(file, key_name))
-                    return 1
+                if verify_signer(key_info, key_lines):
+                    log.critical("{} is not in the format of a {}".format(file, key_name))
+                    return 2
     else:
-        log.warning("{} does not exist".format(file))
+        log.critical("{} does not exist".format(file))
         return 2
-
+        
     return 0
+
+def verify_signer(key_info, file_data):
+    """ Verify signature key file """
+
+#format of signature file
+
+# Bag attributes
+     #localKeyID: "keyid"
+#subject="some data"
+#issuer="some data"
+#-----BEGIN CERTIFICATE-----
+#"lines of certificate data"
+#-----END CERTIFICATE-----
+# Bag attributes
+   # localKeyID: "keyid"
+#-----BEGIN PRIVATE KEY-----
+# "Lines of key data"
+#-----END PRIVATE KEY-----
+
+    CORRECT_FORMAT = ["KEY", "SUB", "ISSU", "B_CERT","E_CERT", "KEY", "B_KEY"]
+    KEYID =key_info[3]
+    SUBJECT =key_info[4]
+    ISSUER = key_info[5]
+    BEGIN_CERT = key_info[6]
+    END_CERT = key_info[7]
+    BEGIN_KEY = key_info[8]
+    key_indexes = []
+    format_pattern = []
+    
+
+    # find keywords in file
+   
+    for i in range(len(file_data)):
+        
+        if file_data[i].find(KEYID) != -1:
+            key_indexes.append(i)
+            format_pattern.append('KEY')
+        elif file_data[i].find(SUBJECT) != -1:
+            format_pattern.append('SUB')
+        elif file_data[i].find(ISSUER) != -1:
+            format_pattern.append('ISSU')
+        elif file_data[i].find(BEGIN_CERT) != -1:
+            format_pattern.append('B_CERT')
+        elif file_data[i].find(END_CERT) != -1:
+            format_pattern.append('E_CERT')
+        elif file_data[i].find(BEGIN_KEY) != -1:
+            format_pattern.append('B_KEY')
+        
+    # verify there is two KeyIDs and they are the same, and format is correct for keywords in data file
+    if (len(key_indexes) != 2 or (file_data[key_indexes[0]] != file_data[key_indexes[1]]) or
+    format_pattern != CORRECT_FORMAT):
+        return 1
+    return 0
+
 
 def check_for_tool(tool, ver_cmd, tool_path=None):
     """Checks tool is installed and return path"""
