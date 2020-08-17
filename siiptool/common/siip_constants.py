@@ -95,11 +95,17 @@ IP_OPTIONS = {
         [None],
         ["free", "56752da9-de6b-4895-8819-1945b6b76c22", None],
     ],
-    "obb_digest": [
-        ["ui", "ObbDigest"],
+    "obbpei_digest": [
+        ["ui", "ObbPeiDigest"],
         ["raw", "PI_NONE"],
         [None],
         ["free", "F57757FC-2603-404F-AAE2-34C6232388E8", None],
+    ],
+    "obbdxe_digest": [
+        ["ui", "ObbDxeDigest"],
+        ["raw", "PI_NONE"],
+        [None],
+        ["free", "32198477-7337-40E4-897D-BC33F018B42F", None],
     ],
     "gop": [
         ["ui", "IntelGopDriver"],

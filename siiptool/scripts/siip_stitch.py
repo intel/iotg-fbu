@@ -48,9 +48,18 @@ logger = logging.getLogger("siip_stitch")
 if sys.version_info < (3, 6):
     raise Exception("Python 3.6 is the minimal version required")
 
-GUID_FVADVANCED = uuid.UUID("B23E7388-9953-45C7-9201-0473DDE5487A")
-GUID_FVSECURITY = uuid.UUID("5A9A8B4E-149A-4CB2-BDC7-C8D62DE2C8CF")
+GUID_FFS_OBBPEI_HASH = uuid.UUID("F57757FC-2603-404F-AAE2-34C6232388E8")
+GUID_FFS_OBBDXE_HASH = uuid.UUID("32198477-7337-40E4-897D-BC33F018B42F")
+
+# Region for OBBPEI digest
 GUID_FVOSBOOT = uuid.UUID("13BF8810-75FD-4B1A-91E6-E16C4201F80A")
+GUID_FVUEFIBOOT = uuid.UUID("0496D33D-EA79-495C-B65D-ABF607184E3B")
+GUID_FVADVANCED = uuid.UUID("B23E7388-9953-45C7-9201-0473DDE5487A")
+
+# Region for OBBDXE digest
+GUID_FVPOSTMEMORY = uuid.UUID("9DFE49DB-8EF0-4D9C-B273-0036144DE917")
+GUID_FVFSPS = uuid.UUID("8C8CE578-8A3D-4F1C-9935-896185C32DD3")  # EFI_FIRMWARE_FILE_SYSTEM2_GUID
+
 
 def search_for_fv(inputfile, ipname):
     """Search for the firmware volume."""
@@ -141,7 +150,7 @@ def create_commands(filenames, ipname, fwvol):
 
 
 def merge_and_replace(filename, guid_values, fwvol):
-    """Perform merge and replace of section using different executables."""
+    """Perform merge and replace of section using different executable."""
 
     cmds = create_commands(filename, guid_values, fwvol)
 
@@ -157,7 +166,8 @@ def parse_cmdline():
     """ Parsing and validating input arguments."""
 
     visible_ip_list = list(IP_OPTIONS.keys())
-    visible_ip_list.remove("obb_digest")
+    visible_ip_list.remove("obbpei_digest")
+    visible_ip_list.remove("obbdxe_digest")
 
     epilog = "Supported Sub-Region Names: {}\n".format(visible_ip_list)
     parser = argparse.ArgumentParser(prog=__prog__,
@@ -236,40 +246,50 @@ def stitch_and_update(ifwi_file, ip_name, file_list, out_file):
         sys.exit(status)
 
 
-def update_obb_digest(ifwi_file, digest_file):
-    """Calculate OBB hash according to a predefined range"""
+def calculate_new_obb_digest(ifwi_file, fv_list, digest_file):
+    """Calculate new OBB hash for one or more firmware volumes.
+       The assumption is all FVs are continuous in one region."""
+
+    bios = bytearray()
 
     ifwi = IFWI_IMAGE(ifwi_file)
     if not ifwi.is_ifwi_image():
-        logger.critical("Bad IFWI image")
-        exit(1)
+        logger.warn("Invalid IFWI descriptor signature. Assuming BIOS image")
+        with open(ifwi_file, "rb") as fd:
+            bios = FirmwareDevice(0, bytearray(fd.read()))
+    else:
+        ifwi.parse()
+        bios_start = ifwi.region_list[1][1]
+        bios_limit = ifwi.region_list[1][2]
+        bios = FirmwareDevice(0, ifwi.data[bios_start:bios_limit+1])
 
-    ifwi.parse()
-    bios_start = ifwi.region_list[1][1]
-    bios_limit = ifwi.region_list[1][2]
-
-    logger.info("Parsing BIOS ...")
-    bios = FirmwareDevice(0, ifwi.data[bios_start:bios_limit+1])
+    logger.info("Found BIOS ({}MB)...".format(len(bios.FdData) // (1024 * 1024)))
     bios.ParseFd()
 
-    # Extract FVs belongs to OBB
-    obb_fv_idx = bios.get_fv_index_by_guid(GUID_FVOSBOOT.bytes_le)
-    if not (0 < obb_fv_idx < len(bios.FvList)):
-        raise ValueError("Starting OBB FV is not found")
+    # Locate FVs (note: only the first FV index is used)
+    fv_id_list = []
+    for fv in fv_list:
+        obb_fv_idx = bios.get_fv_index_by_guid(fv.bytes_le)
+        if not (0 < obb_fv_idx < len(bios.FvList)):
+            raise ValueError("FV {} for OBB region is not found".format(fv))
+        logger.info("Found FV @ index {}".format(obb_fv_idx))
+        fv_id_list.append(obb_fv_idx)
 
-    logger.debug("OBB region starts from FV{}".format(obb_fv_idx))
-    obb_offset = bios.FvList[obb_fv_idx].Offset
+    starting_fv_idx = fv_id_list[0]
+    logger.info("*** OBB region starts from FV{} (len:{})".format(starting_fv_idx, len(fv_id_list)))
+    obb_offset = bios.FvList[starting_fv_idx].Offset
     obb_length = 0
     if bios.is_fsp_wrapper():
-        # FVOSBOOT + FVUEFIBOOT_PRIME + FVADVANCED + FVPOSTMEMORY + FSPS
         logger.info("FSP Wrapper BIOS")
-        obb_fv_end = obb_fv_idx + 5
+        obb_fv_end = starting_fv_idx + len(fv_list)
     else:
-        # FVOSBOOT + FVUEFIBOOT_PRIME + FVADVANCED + FVPOSTMEMORY
-        logger.info("EDK2 BIOS")
-        obb_fv_end = obb_fv_idx + 4
+        logger.critical("EDK2 BIOS image format is not supported any more")
+        exit(2)
 
-    for fv in bios.FvList[obb_fv_idx:obb_fv_end]:
+    # Get total length of OBB
+    logger.info("start FV: {} end FV: {}".format(starting_fv_idx, obb_fv_end))
+    for fv in bios.FvList[starting_fv_idx:obb_fv_end]:
+        logger.info("Adding FV size 0x{:x} ...".format(len(fv.FvData)))
         obb_length += len(fv.FvData)
 
     logger.debug("OBB offset: {:x} len {:x}".format(obb_offset, obb_length))
@@ -293,10 +313,10 @@ def main():
     try:
         parser = parse_cmdline()
         args = parser.parse_args()
-   
+
         outfile = Path(args.OUTPUT_FILE).resolve()
         outfile = utils.file_not_exist(outfile, logger)
-        
+
         for f in (FMMT, GENFV, GENFFS, GENSEC, LZCOMPRESS, RSA_HELPER, FMMT_CFG):
             if not os.path.exists(f):
                 raise FileNotFoundError("Thirdparty tool not found ({})".format(f))
@@ -349,12 +369,19 @@ def main():
 
         # Update OBB digest after stitching any data inside OBB region
         if args.ipname in ["gop", "vbt", "gfxpeim"]:
-            ipname = "obb_digest"
+
+            if args.ipname == "gop":
+                ipname = "obbdxe_digest"
+                fv_list = [GUID_FVOSBOOT, GUID_FVUEFIBOOT, GUID_FVADVANCED]
+            else:
+                ipname = "obbpei_digest"
+                fv_list = [GUID_FVPOSTMEMORY, GUID_FVFSPS]
+
             digest_file = "tmp.obb.hash.bin"
 
             to_remove.append(digest_file)
 
-            update_obb_digest(outfile, digest_file)
+            calculate_new_obb_digest(outfile, fv_list, digest_file)
 
             filenames = [str(Path(f).resolve()) for f in [outfile, digest_file]]
 
