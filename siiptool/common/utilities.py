@@ -92,7 +92,7 @@ def check_key(file, key_type, log):
             "RSA private key",
             "-----BEGIN RSA PRIVATE KEY-----",
             "-----END RSA PRIVATE KEY-----",
-            2000,
+            3500,
         ],
         "pubcert": [
             "Public Certificate",
@@ -100,8 +100,8 @@ def check_key(file, key_type, log):
             "-----END CERTIFICATE-----",
             2500,
         ],
-        "winsigner": [
-            "Certificate Signer",
+        "pkcs7": [
+           "PKCS7 Signer",
            "Bag Attributes",
            "-----END PRIVATE KEY-----",
            "localKeyID:",
