@@ -120,4 +120,10 @@ IP_OPTIONS = {
         ["cmprs", "PI_STD"],
         ["peim", "76ED893A-B2F9-4C7D-A05F-1EA170ECF6CD", None],
     ],
+    "isi": [
+        ["ui", "IntelIsiConfig"],
+        ["raw", "PI_NONE"],
+        [None],
+        ["free", "6714A5AD-024D-42E0-883A-2FBD0A311C24", None],
+    ],
 }
