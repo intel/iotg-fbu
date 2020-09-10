@@ -7,7 +7,7 @@
 
 """ Tool Version Number """
 
-VERSION = "0.7.6"
+VERSION = "0.7.7"
 
 """Sub-region configuration for different types of code/data
 """
