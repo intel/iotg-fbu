@@ -17,12 +17,12 @@ import subprocess
 import argparse
 import uuid
 import struct
+import re
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common.siip_constants import VERSION as __version__
 from common.banner import banner
-from common.siip_constants import IP_OPTIONS
 import common.utilities as utils
 import common.logging as logging
 
@@ -38,52 +38,64 @@ if sys.version_info < (3, 6):
     raise Exception("Python 3.6 is the minimal version required")
 
 
-class EfiSubregAuthenClass():
+class UefiSubregAuthenClass:
     """ Class define EFI subreation Authentication class """
 
     # typedef struct {
-    #  CERTIFICATE   Hdr;
-    #  EFI_GUID     CertType;
-    #  } CERTIFICATE_UEFI_GUID
+    # char                       Name[16 bytes]; // Name of the sub-region
+    # EFI_GUID                   VendorGuid;    // Vendor GUID
+    # SUB_REGION_VERIFICATION    CertParam;    // Sub-Region Certificate Parameters
+    # } EFI_SUB_REGION_AUTHENTICATION;
 
     # typedef struct {
-    #    UINT32  dwLength;
-    #    UINT16  wRevision;
-    #    UINT16  wCertificateType;
-    #  } CERTIFICATE;
+    # SUB_REGION_HEADER  Hdr;             // Certificate Header
+    # UINT8              CertData[1];    // Calculated Signature
+    # } SUB_REGION_VERIFICATION;
 
-    _StructFormat = "<LHH16s"
-    _StructSize = struct.calcsize(_StructFormat)
+    # typedef struct {
+    # UINT32     Revision;        // Revision of Signature Structure
+    # UINT32     Length;          // Length of the Signature + Header
+    # EFI_GUID   CertType;         // Signature type
+    # } SUB_REGION_HEADER;
 
-    _StructAuthInfoFormat = "<LHH16s"
+    # typedef struct {
+    # UINT8     PublicKey[384];  // Public Key pair of the Signing Key
+    # UINT8     Signature[384];   // SHA384-RSA3K Signature
+    # } EFI_CERT_BLOCK_RSA3072_SHA384;
+
+    _StructAuthInfoFormat = "<16s16sLL16s"
     _StructAuthInfoSize = struct.calcsize(_StructAuthInfoFormat)
+    _StructSubRegionHdrFormat = "<LL16s"
+    _StructSubRegionHdrSize = struct.calcsize(_StructSubRegionHdrFormat)
 
     def __init__(self, cert_info):
-        """ intilization variables for structure """
+        """ initialization of the variables for structure """
 
         self._valid = False
-        self.dw_length = self._StructAuthInfoSize
+        self.w_name = cert_info["name"]
+        self.vendor_guid = cert_info["vendor_guid"]
         self.w_revision = cert_info["revision"]
-        self.w_certificate_type = cert_info["win_cert_type"]
-        self.cert_type = cert_info["guid_cert_type"]
+        self.dw_length = self._StructAuthInfoSize
+        self.cert_type = cert_info["cert_type"]
         self.cert_data = bytes()
         self.payload = bytes()
 
     def encode(self):
         """ builds structure for subregion authentication header """
 
-        self.dw_length = self._StructAuthInfoSize + len(self.cert_data)
+        self.dw_length = self._StructSubRegionHdrSize + len(self.cert_data)
 
-        efi_subreg_authen_hdr = struct.pack(
-            self._StructFormat,
-            self.dw_length,
+        uefi_subreg_authen_hdr = struct.pack(
+            self._StructAuthInfoFormat,
+            self.w_name,
+            self.vendor_guid.bytes,
             self.w_revision,
-            self.w_certificate_type,
+            self.dw_length,
             self.cert_type.bytes_le,
         )
         self._valid = True
 
-        return efi_subreg_authen_hdr + self.cert_data + self.payload
+        return uefi_subreg_authen_hdr + self.cert_data + self.payload
 
     def dump_info(self):
         """ dump the information of subregion authentication structure """
@@ -102,12 +114,13 @@ class EfiSubregAuthenClass():
             )
         )
         print(
-            "EFI_SUBREGION_AUTHENTICATION.AuthInfo.Hdr.wCertificateType = {w_certificate_type:04X}"
-            .format(w_certificate_type=self.w_certificate_type)
+            "EFI_SUBREGION_AUTHENTICATION.AuthInfo.Hdr.wCertificateType = {Vendor_guid}".format(
+                Vendor_guid=str(self.vendor_guid).upper()
+            )
         )
         print(
-            "EFI_SUBREGION_AUTHENTICATION.AuthInfo.cert_type             = {Guid}".format(
-                Guid=str(self.cert_type).upper()
+            "EFI_SUBREGION_AUTHENTICATION.AuthInfo.cert_type             = {cert_type}".format(
+                cert_type=str(self.cert_type).upper()
             )
         )
         print(
@@ -116,43 +129,67 @@ class EfiSubregAuthenClass():
             )
         )
         print(
-            "sizeof (payload)                                                = {Size:08X}".format(
+            "sizeof (payload)                                             = {Size:08X}".format(
                 Size=len(self.payload)
             )
         )
 
 
-def get_certifcation_info(ipname):
+def get_certifcation_info(cl_inputs, signer):
     """ returns the certifcate type passed on subregion """
 
-    win_cert_info = {
-        "revision": 0x0200,
-        "win_cert_type": 0x0EF1,
-        "guid_cert_type": uuid.UUID("4aafd29d-68df-49ee-8aa9-347d375665a7"),
+    # different signature type supported by tool
+    CERT_TYPE = {
+        "pkcs7": [
+            "4aafd29d-68df-49ee-8aa9-347d375665a7",
+            "smime -sign -binary -outform DER -md sha256 -nodetach -signer",
+            None,
+        ],
+        "rsa": [
+            "2ee9976f-9d4c-4442-a997-8cad1c875fa1",
+            "dgst -binary -keyform PEM -sha384 -sign",
+            "rsa -pubout -modulus -noout",
+        ],
     }
 
-    if ipname == "tcc":
-        return win_cert_info
+    # Check if openssl is installed
+    path = utils.check_for_tool("openssl", "version", cl_inputs.tool_path)
 
-    # other regions will be supported once the design is approve and
-    # implemented into BIOS (Amol desigh) Tcc design is implemented
-    # in new version of BIOS (Curtis design)
+    # Get signing type information
+    cert_info = CERT_TYPE.get(cl_inputs.signer_type)
 
-    LOGGER.critical("%s is not supported at this time", ipname)
-    sys.exit(2)
+    # Create openSSL command 1
+    cmd = f"{path} {cert_info[1]} {signer}"
+
+    # Create openSSL command 2
+    if cert_info[2] is not None:
+        cmd2 = f"{path} {cert_info[2]}"
+    else:
+        cmd2 = cert_info[2]
+
+    certification_info = {
+        "revision": 0x01,
+        "name": cl_inputs.name.encode("utf-8"),
+        "vendor_guid": uuid.UUID(cl_inputs.vendor_guid),
+        "cert_type": uuid.UUID(cert_info[0]),
+        "openssl_cmd": cmd,
+        "openssl_cmd2": cmd2,
+    }
+
+    return certification_info
 
 
 def build_subreg_signed_file(cert_struct, outfile):
     """ build output file """
+
     try:
         with open(outfile, mode="wb") as signed_file:
             signed_file.write(cert_struct)
 
     except ValueError:
-        LOGGER.critical(
-            "\nsubregion_sign.py: can not write payload file: %s", outfile
-        )
+        LOGGER.critical("\nCannot write payload file: %s", outfile)
         sys.exit(2)
+
 
 def read_file(inputfile):
     """ read input file to bytes """
@@ -162,31 +199,21 @@ def read_file(inputfile):
             sign_file = file.read()
 
     except ValueError:
-        LOGGER.critical(
-            "\nsubregion_sign.py: can not read payload file: %s", inputfile
-        )
+        LOGGER.critical("\nCannot read payload file: %s", inputfile)
         sys.exit(2)
 
     return sign_file
 
 
-def generate_signature(tool_path, signerfile, certfile, subregion):
+def generate_signature(openssl_cmd, payload):
     """ signed input file """
 
+    # Run OpenSSL command with the specified private key and capture signature from STDOUT
 
-    # Check if openssl is installed
-    path = utils.check_for_tool('openssl', 'version', tool_path)
-
-    # Build openssl command to using sign to get signature
-    openssl_cmd = f'{path} smime -sign -binary -outform DER -md sha256 -signer {signerfile} -certfile {certfile}'
-
-    #
-    # Sign the input file using the specified private key and capture signature from STDOUT
-    #
     try:
         ssl_process = subprocess.run(
             openssl_cmd,
-            input=subregion,
+            input=payload,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=True,
@@ -195,11 +222,11 @@ def generate_signature(tool_path, signerfile, certfile, subregion):
         signature = ssl_process.stdout
 
     except:
-        LOGGER.warning("\nsubregion_sign: can not run openssl.")
+        LOGGER.warning("\nCannot run openssl.")
         sys.exit(1)
 
     if ssl_process.returncode != 0:
-        LOGGER.critical("\nsubregion_sign: openssl failed.")
+        LOGGER.critical("\nopenssl failed.")
         sys.exit(1)
 
     return signature
@@ -213,9 +240,6 @@ def create_arg_parser():
             if not arg.strip():
                 continue
             yield arg
-
-    visible_ip_list = list(IP_OPTIONS.keys())
-    visible_ip_list.remove("obb_digest")
 
     my_parser = argparse.ArgumentParser(
         prog=__prog__,
@@ -236,12 +260,29 @@ def create_arg_parser():
         default="SIGNED_OUT.bin",
     )
     my_parser.add_argument(
-        "-ip",
-        "--ipname",
-        help="The name of the IP subregion to sign. This is required.",
-        metavar="ipname",
+        "-n",
+        "--name",
+        help="The name of the subregion being signed. Max size is 16 bytes The name is stored in signed file.",
+        type=chk_string_size,
+        metavar="subregion",
         required=True,
-        choices=visible_ip_list,
+    )
+    my_parser.add_argument(
+        "-vg",
+        "--vendor-guid",
+        help="Vender GUID is one specific value given by the vendor for the sub-region being signed.\
+        This is required. The format is '00000000-0000-0000-0000-000000000000'",
+        type=chk_guid_format,
+        metavar="v_guid",
+        required=True,
+    )
+    my_parser.add_argument(
+        "-t",
+        "--signer_type",
+        metavar="sign_type",
+        required=True,
+        help="Type of Signing pkcs7 or rsa.",
+        choices=["pkcs7", "rsa"],
     )
     my_parser.add_argument(
         "-s",
@@ -251,14 +292,7 @@ def create_arg_parser():
         help="OpenSSL signer private certificate filename.",
     )
     my_parser.add_argument(
-        "-p",
-        "--pubCert",
-        dest="certfile",
-        required=True,
-        help="OpenSSL other public certificate filename.",
-    )
-    my_parser.add_argument(
-        "--toolPath",
+        "--toolpath",
         dest="tool_path",
         help="Path to signtool or OpenSSL tool. "
         " Optional if path to tools are already in PATH.",
@@ -280,6 +314,37 @@ def create_arg_parser():
     return my_parser
 
 
+def chk_string_size(string):
+    """"Check the size of the string"""
+
+    max_size = 16
+    size = len(string.encode("utf-8"))
+
+    msg = "The size of {} is {}. The {} size must not be greter than {}".format(
+        string, size, string, max_size
+    )
+    if size > max_size:
+        raise argparse.ArgumentTypeError(str(msg))
+    return string
+
+
+def chk_guid_format(guid):
+    """ check for correct formate of GUID """
+
+    # format for guid xxxxxxxx-xxxx-xxxx-xxx-xxxxxxxxxxxx where x can be A-F or 0-9
+    guidFormat = re.compile(
+        r"([a-f\d]{8}[-][a-f\d]{4}[-][a-f\d]{4}[-][a-f\d]{4}[-]{1}[a-f\d]{12}$)", re.I
+    )
+
+    if guidFormat.match(guid) is None:
+        raise argparse.ArgumentTypeError(
+            "File guild value is not in correct format \
+                                       (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx where x can be A-F or 0-9)\
+                                       {}".format(guid)
+        )
+    return guid
+
+
 def main():
     """Entry to script."""
 
@@ -289,12 +354,11 @@ def main():
     # Use absolute path for openSSL
     sbrgn_file = Path(args.subregion_file).resolve()
     signer_file = Path(args.signerfile).resolve()
-    cert_file = Path(args.certfile).resolve()
     outfile = Path(args.signed_file).resolve()
 
-    filenames = [str(sbrgn_file), str(signer_file), str(cert_file)]
+    filenames = [str(sbrgn_file), str(signer_file)]
 
-    #Verify file input file exist
+    # Verify file input file exist
     status = utils.file_exist(filenames, LOGGER)
     if status != 0:
         sys.exit(status)
@@ -304,41 +368,64 @@ def main():
     if status != 0:
         sys.exit(status)
 
-    #Verify certification files
-    status = utils.check_key(cert_file, "pubcert", LOGGER)
-    if status != 0:
-        sys.exit(status)
-
-    status = utils.check_key(signer_file, "winsigner", LOGGER)
+    status = utils.check_key(signer_file, args.signer_type, LOGGER)
     if status != 0:
         sys.exit(status)
 
     outfile = utils.file_not_exist(outfile, LOGGER)
 
-    cert_info = get_certifcation_info(args.ipname)
+    cert_info = get_certifcation_info(args, signer_file)
 
-    efi_subreg_authen = EfiSubregAuthenClass(cert_info)
+    uefi_subreg_authen = UefiSubregAuthenClass(cert_info)
 
     # read input file to store into structure
     payload = read_file(sbrgn_file)
-    efi_subreg_authen.payload = payload
+    uefi_subreg_authen.payload = payload
 
+    # add Vendor Guid to Payload
+    payload = uefi_subreg_authen.vendor_guid.bytes + payload
 
     # calculate the signature store in structure
-    cert_data = generate_signature(
-        args.tool_path, signer_file, cert_file, payload
-    )
-    efi_subreg_authen.cert_data = cert_data
+    cert_data = generate_signature(cert_info["openssl_cmd"], payload)
+
+    if cert_info["openssl_cmd2"]:
+        # Read in the private key
+        payload = read_file(signer_file)
+
+        # Extract the public key modulus from private key
+        cert_pub = generate_signature(cert_info["openssl_cmd2"], payload)
+
+        # convert public key from bytes to string
+        cert_pub_string = cert_pub.decode("utf-8")
+
+        # remove word Moudlus= from the file
+        cert_pubkey = cert_pub_string.replace("Modulus=", "")
+
+        # remove end of line from public key
+        cert_pubkey = cert_pubkey.rstrip()
+
+        # Conert to hex bytes and add to signature
+        cert_pubkey = bytes.fromhex(cert_pubkey)
+
+        # public key and signature are packed back to back
+        cert_data = cert_pubkey + cert_data
+
+    uefi_subreg_authen.cert_data = cert_data
 
     # pack structure with signature and get update size of header
-    efi_signed_data = efi_subreg_authen.encode()
+    uefi_signed_data = uefi_subreg_authen.encode()
 
     if args.show:
-        efi_subreg_authen.dump_info()
+        uefi_subreg_authen.dump_info()
 
-    # create output EFI subregion authentication header and signature and original file
-    build_subreg_signed_file(efi_signed_data, str(outfile))
-    print("Signed {} sub-region({}) was successfully generated.".format(args.ipname, outfile))
+    # Create output EFI subregion authentication header and signature and original file
+    build_subreg_signed_file(uefi_signed_data, str(outfile))
+
+    print(
+        "Signed {} sub-region({}) was successfully generated.".format(
+            args.name, outfile
+        )
+    )
 
 
 if __name__ == "__main__":
