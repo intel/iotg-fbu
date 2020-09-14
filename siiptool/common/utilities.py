@@ -131,11 +131,15 @@ def check_key(file, key_type, log):
             with open(file, "r") as key:
                 key_lines = key.readlines()
             if not ((FIRSTLINE in key_lines[0]) and (LASTLINE in key_lines[-1])):
-               log.critical("{} is not in the format of a {}".format(file, key_name))
-               return 2
+                if key_type == "rsa":
+                    # check if key is in format "-----Begin/End Private Key----" instead of -----Begin/End RSA Private Key---"
+                    if ( FIRSTLINE.replace(' RSA','') in key_lines[0]) and (LASTLINE.replace(' RSA',"")in key_lines[-1]): 
+                        return 0
+                log.critical("{} is not in the format of a {}".format(file, key_name))
+                return 2
 
              # veirfy signer format
-            if key_type == "winsigner":
+            if key_type == "pkcs7":
                 if verify_signer(key_info, key_lines):
                     log.critical("{} is not in the format of a {}".format(file, key_name))
                     return 2
