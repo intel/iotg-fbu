@@ -363,11 +363,6 @@ def main():
     if status != 0:
         sys.exit(status)
 
-    # Verify file is not empty or the IP files are smaller than the input file
-    status = utils.check_file_size(LOGGER, filenames)
-    if status != 0:
-        sys.exit(status)
-
     status = utils.check_key(signer_file, args.signer_type, LOGGER)
     if status != 0:
         sys.exit(status)
