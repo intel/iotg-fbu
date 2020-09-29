@@ -363,6 +363,10 @@ def main():
     if status != 0:
         sys.exit(status)
 
+    if os.path.getsize(sbrgn_file) == 0:
+        LOGGER.critical("size of {} subregion file must be greater than 0!".format(sbrgn_file))
+        sys.exit(status)
+
     status = utils.check_key(signer_file, args.signer_type, LOGGER)
     if status != 0:
         sys.exit(status)
