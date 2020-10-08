@@ -16,6 +16,7 @@ It supports Windows 10, Ubuntu Linux, or Yocto Linux.
     - [Signing tool](#signing-tool)
   - [License](#license)
 
+Note: if you found out the tool is not compatible with your IFWI version, please fallback to use the previous release version of the tool.
 
 ## Installation
 
