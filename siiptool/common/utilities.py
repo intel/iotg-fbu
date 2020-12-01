@@ -11,7 +11,7 @@ import sys
 import click
 from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import common.logging as logging
+import common.logger as logging
 
 
 

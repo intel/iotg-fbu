@@ -21,7 +21,7 @@ import common.utilities as utils
 import thirdparty.edk2_capsule_tool.GenerateCapsule as generate_capsule_tool
 from common.siip_constants import VERSION as __version__
 from common.banner import banner
-import common.logging as logging
+import common.logger as logging
 
 logger = logging.getLogger("subregion_capsule")
 

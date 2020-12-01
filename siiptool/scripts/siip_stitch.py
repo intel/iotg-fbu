@@ -35,7 +35,7 @@ from common.tools_path import FMMT, GENFV, GENFFS, GENSEC, LZCOMPRESS, TOOLS_DIR
 from common.tools_path import RSA_HELPER, FMMT_CFG
 from common.siip_constants import VERSION as __version__
 from common.banner import banner
-import common.logging as logging
+import common.logger as logging
 
 __prog__ = "siip_stitch"
 
