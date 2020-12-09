@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common.siip_constants import VERSION as __version__
 from common.banner import banner
 import common.utilities as utils
-import common.logging as logging
+import common.logger as logging
 
 LOGGER = logging.getLogger("subregion_sign")
 
