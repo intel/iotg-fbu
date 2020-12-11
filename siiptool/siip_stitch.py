@@ -24,18 +24,18 @@ from cryptography.hazmat.primitives import hashes as hashes
 from cryptography.hazmat.backends import default_backend
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import common.subregion_image as sbrgn_image
-import common.utilities as utils
-from common.subregion_descriptor import SubRegionDescriptor
-from common.subregion_image import generate_sub_region_image
-from common.ifwi import IFWI_IMAGE
-from common.firmware_volume import FirmwareDevice
-from common.siip_constants import IP_OPTIONS
-from common.tools_path import FMMT, GENFV, GENFFS, GENSEC, LZCOMPRESS, TOOLS_DIR
-from common.tools_path import RSA_HELPER, FMMT_CFG
-from common.siip_constants import VERSION as __version__
-from common.banner import banner
-import common.logging as logging
+import siiptool.common.subregion_image as sbrgn_image
+import siiptool.common.utilities as utils
+from siiptool.common.subregion_descriptor import SubRegionDescriptor
+from siiptool.common.subregion_image import generate_sub_region_image
+from siiptool.common.ifwi import IFWI_IMAGE
+from siiptool.common.firmware_volume import FirmwareDevice
+from siiptool.common.siip_constants import IP_OPTIONS
+from siiptool.common.tools_path import FMMT, GENFV, GENFFS, GENSEC, LZCOMPRESS, TOOLS_DIR
+from siiptool.common.tools_path import RSA_HELPER, FMMT_CFG
+from siiptool.common.siip_constants import VERSION as __version__
+from siiptool.common.banner import banner
+import siiptool.common.logging as logging
 
 __prog__ = "siip_stitch"
 

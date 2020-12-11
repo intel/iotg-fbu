@@ -78,7 +78,7 @@ logging_default_cfg = {
     },
     "handlers": {
         "console": {
-            "class": "common.logging.StreamHandler",
+            "class": "siiptool.common.logging.StreamHandler",
             "level": "DEBUG",
             "formatter": "default"
         },

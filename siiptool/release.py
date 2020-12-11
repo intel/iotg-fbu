@@ -14,7 +14,7 @@ OUTDIR = "dist"
 
 BOM = [
     "scripts",
-    "common",
+    "siiptool.common",
     "thirdparty",
     "bin"
 ]

@@ -12,7 +12,7 @@ from ctypes import Structure
 from ctypes import c_char, c_uint32, c_uint8, c_uint64, c_uint16, sizeof, ARRAY
 from functools import reduce
 
-from common.firmware_volume import FirmwareDevice
+from siiptool.common.firmware_volume import FirmwareDevice
 
 
 class SPI_DESCRIPTOR(Structure):

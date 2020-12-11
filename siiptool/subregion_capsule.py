@@ -15,13 +15,13 @@ import argparse
 import glob
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-import common.subregion_descriptor as subrgn_descrptr
-import common.subregion_image as sbrgn_image
-import common.utilities as utils
+import siiptool.common.subregion_descriptor as subrgn_descrptr
+import siiptool.common.subregion_image as sbrgn_image
+import siiptool.common.utilities as utils
 import thirdparty.edk2_capsule_tool.GenerateCapsule as generate_capsule_tool
-from common.siip_constants import VERSION as __version__
-from common.banner import banner
-import common.logging as logging
+from siiptool.common.siip_constants import VERSION as __version__
+from siiptool.common.banner import banner
+import siiptool.common.logging as logging
 
 logger = logging.getLogger("subregion_capsule")
 

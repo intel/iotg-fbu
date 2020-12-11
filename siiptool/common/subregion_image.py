@@ -12,10 +12,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from common import subregion_descriptor as subrgn_descptr
-from common.utilities import get_key_and_value
-from common.siip_constants import IP_OPTIONS
-from common.tools_path import GENFV, GENFFS, GENSEC, LZCOMPRESS
+from siiptool.common import subregion_descriptor as subrgn_descptr
+from siiptool.common.utilities import get_key_and_value
+from siiptool.common.siip_constants import IP_OPTIONS
+from siiptool.common.tools_path import GENFV, GENFFS, GENSEC, LZCOMPRESS
 
 ##############################################################################
 #

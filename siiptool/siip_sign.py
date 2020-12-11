@@ -22,9 +22,9 @@ from ctypes import Structure
 from ctypes import c_char, c_uint32, c_uint8, c_uint64, c_uint16, sizeof, ARRAY
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from common.siip_constants import VERSION as __version__
-from common.banner import banner
-import common.logging as logging
+from siiptool.common.siip_constants import VERSION as __version__
+from siiptool.common.banner import banner
+import siiptool.common.logging as logging
 
 logger = logging.getLogger("siip_sign")
 
