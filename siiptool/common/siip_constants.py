@@ -111,7 +111,7 @@ IP_OPTIONS = {
         ["ui", "IntelGopDriver"],
         ["pe32", None],
         [None],
-        ["gop", "FF0C8745-3270-4439-B74F-3E45F8C77064", None],
+        ["dxe", "FF0C8745-3270-4439-B74F-3E45F8C77064", None],
     ],
     "gfxpeim": [
         ["ui", "IntelGraphicsPeim"],
@@ -125,5 +125,11 @@ IP_OPTIONS = {
         ["raw", "PI_NONE"],
         [None],
         ["free", "6714A5AD-024D-42E0-883A-2FBD0A311C24", None],
+    ],
+    "undi": [
+        ["ui", "IntelGbeUndi"],
+        ["pe32", None],
+        [None],
+        ["dxe", "720E6687-43C4-84EA-E1B5-23AAED359840", None],
     ],
 }

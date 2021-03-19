@@ -341,7 +341,7 @@ def main():
             IPNAME_file = Path(args.IPNAME_IN.name).resolve()
 
         filenames = [str(IFWI_file), str(IPNAME_file)]
-        if args.ipname in ["gop", "gfxpeim", "vbt"]:
+        if args.ipname in ["gop", "gfxpeim", "vbt", "undi"]:
             if not args.private_key or not os.path.exists(args.private_key):
                 logger.critical("\nMissing RSA key to stitch GOP/PEIM GFX/VBT from command line\n")
                 parser.print_help()
@@ -368,9 +368,9 @@ def main():
         stitch_and_update(args.IFWI_IN.name, args.ipname, filenames, outfile)
 
         # Update OBB digest after stitching any data inside OBB region
-        if args.ipname in ["gop", "vbt", "gfxpeim"]:
+        if args.ipname in ["gop", "vbt", "gfxpeim", "undi"]:
 
-            if args.ipname == "gop":
+            if args.ipname in ["gop", "undi"]:
                 ipname = "obbdxe_digest"
                 fv_list = [GUID_FVOSBOOT, GUID_FVUEFIBOOT, GUID_FVADVANCED]
             else:

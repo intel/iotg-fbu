@@ -52,7 +52,7 @@ GENSEC_SECTION = {
 # gets the firmware file system type needed for genFFs
 FFS_FILETYPE = {
     "free": "EFI_FV_FILETYPE_FREEFORM",
-    "gop": "EFI_FV_FILETYPE_DRIVER",
+    "dxe": "EFI_FV_FILETYPE_DRIVER",
     "peim": "EFI_FV_FILETYPE_PEIM",
 }
 
@@ -134,7 +134,7 @@ def ip_inputfiles(filenames, ipname):
     num_infiles = 1
     if ipname in ["pse", "fkm", "tccp"]:
         inputfiles.extend(["tmp.cmps", "tmp.guid"])
-    elif ipname in ["gop", "gfxpeim"]:
+    elif ipname in ["gop", "gfxpeim", "undi"]:
         inputfiles.remove("tmp.raw")
         inputfiles.insert(1, "tmp.pe32")
         if ipname == "gfxpeim":
