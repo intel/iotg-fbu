@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from common.siip_constants import VERSION as __version__
 from common.banner import banner
 import common.logger as logging
+from common.utilities import get_key 
 
 logger = logging.getLogger("siip_sign")
 
@@ -62,10 +63,17 @@ KB = 1024
 MB = 1024 * KB
 
 HASH_CHOICES = {
-    "sha256": (hashes.SHA256(), 2, 0x10000),
-    "sha384": (hashes.SHA384(), 3, 0x11000),
-    "sha512": (hashes.SHA512(), 4, 0x12000),
+    "sha256": (hashes.SHA256(), 2, 0x00000),
+    "sha384": (hashes.SHA384(), 3, 0x01000),
+    "sha512": (hashes.SHA512(), 4, 0x02000),
 }
+
+
+RSA_PAD_MODE = {
+    "pkcs1": 0x10000,
+    "pss": 0x20000,
+}
+
 
 # SIGNING_DATE = int(datetime.now().strftime('%Y%m%d'), 16)
 SIGNING_DATE = 0x20191115  # Hardcode it for now for identical signature
@@ -135,7 +143,7 @@ class FIRMWARE_MANIFEST_HEADER(Structure):
     _fields_ = [
         ("type", c_uint32),
         ("length", c_uint32),
-        ("version", c_uint32),  # SHA related flags
+        ("version", c_uint32),  # SHA and RSA padding related flags
         ("flags", c_uint32),
         ("vendor", c_uint32),
         ("date", c_uint32),
@@ -300,8 +308,18 @@ def get_hash_from_pubkey(pubkey_pem, hash_option):
 
     return hash_result
 
+def get_padding(rsa_pad_mode, hash_option):
+    """determine RSA-PSS or RSA-PKCS1 padding mode """
+    
+    if rsa_pad_mode == "pss":
+        mgf = crypto_padding.MGF1
+        mgf = mgf(HASH_CHOICES[hash_option][0])
+        
+        return crypto_padding.PSS(mgf, crypto_padding.PSS.MAX_LENGTH)
+    
+    return crypto_padding.PKCS1v15()
 
-def compute_signature(data, privkey_pem, hash_option):
+def compute_signature(data, privkey_pem, hash_option, rsa_pad_mode):
     """Compute signature from data"""
 
     with open(privkey_pem, "rb") as privkey_file:
@@ -311,13 +329,12 @@ def compute_signature(data, privkey_pem, hash_option):
 
     # Calculate signature using private key
     signature = key.sign(bytes(data),
-                         crypto_padding.PKCS1v15(),
+                         get_padding(rsa_pad_mode,hash_option),
                          HASH_CHOICES[hash_option][0])
 
     return (signature, key)
 
-
-def verify_signature(signature, data, pubkey_pem, hash_option):
+def verify_signature(signature, data, pubkey_pem, hash_option, rsa_pad_mode):
     """Verify signature with public key"""
 
     with open(pubkey_pem, "rb") as pubkey_file:
@@ -325,12 +342,10 @@ def verify_signature(signature, data, pubkey_pem, hash_option):
             pubkey_file.read(), backend=default_backend()
         )
 
-    # Raises InvalidSignature error if not match
     puk.verify(signature,
                data,
-               crypto_padding.PKCS1v15(),
+               get_padding(rsa_pad_mode, hash_option),
                HASH_CHOICES[hash_option][0])
-
 
 def compute_pubkey_hash(pubkey_pem_file, hash_option):
     """Compute hash of the public key provided in PEM file"""
@@ -363,7 +378,7 @@ def calculate_sum32(data):
     return result32
 
 
-def build_fkm(privkey, pubkey_list, hash_option, outfile, svn):
+def build_fkm(privkey, pubkey_list, hash_option, rsa_pad_mode, outfile, svn):
     """Generate FKM data from a list of public keys"""
 
     if (svn < 0 or svn > 15):
@@ -375,7 +390,7 @@ def build_fkm(privkey, pubkey_list, hash_option, outfile, svn):
     fkm = FIRMWARE_KEY_MANIFEST.from_buffer(fkm_data, 0)
     fkm.manifest_header.type = 0x4
     fkm.manifest_header.length = sizeof(FIRMWARE_MANIFEST_HEADER)
-    fkm.manifest_header.version = HASH_CHOICES[hash_option][2]
+    fkm.manifest_header.version = RSA_PAD_MODE[rsa_pad_mode] |  HASH_CHOICES[hash_option][2] 
     fkm.manifest_header.flags = 0x0
     fkm.manifest_header.vendor = 0x8086  # Intel device
     fkm.manifest_header.date = SIGNING_DATE
@@ -420,7 +435,7 @@ def build_fkm(privkey, pubkey_list, hash_option, outfile, svn):
 
     # Calculate FKM signature (except signature and public key)
     # and store it in FKM header
-    (signature, key) = compute_signature(fkm_data, privkey, hash_option)
+    (signature, key) = compute_signature(fkm_data, privkey, hash_option, rsa_pad_mode)
     puk = get_pubkey_from_privkey(privkey)
     puk_num = puk.public_numbers()
 
@@ -518,7 +533,7 @@ def parse_cpd_header(cpd_data):
     return files
 
 
-def create_image(payload_file, outfile, privkey, hash_option, svn):
+def create_image(payload_file, outfile, privkey, hash_option, rsa_pad_mode, svn):
     """Create a new image with manifest data in front it"""
 
     if (svn < 0 or svn > 255):
@@ -528,6 +543,7 @@ def create_image(payload_file, outfile, privkey, hash_option, svn):
     digest_size = HASH_CHOICES[hash_option][0].digest_size
 
     logger.info("Hashing Algorithm : %s" % HASH_CHOICES[hash_option][0].name)
+    logger.info("RSA Padding Mode : %s" % rsa_pad_mode.upper())
     if digest_size * 8 < 384:
         logger.warning("Security guideline recommends using digest size "
                        "384-bit or longer for hashing algorithm")
@@ -571,7 +587,7 @@ def create_image(payload_file, outfile, privkey, hash_option, svn):
     fbm.manifest_header.type = 0x4
     fbm.manifest_header.length = sizeof(FIRMWARE_BLOB_MANIFEST)
     # Strage but required by specification
-    fbm.manifest_header.version = HASH_CHOICES[hash_option][2]
+    fbm.manifest_header.version = RSA_PAD_MODE[rsa_pad_mode] | HASH_CHOICES[hash_option][2]
     fbm.manifest_header.flags = 0x0
     fbm.manifest_header.vendor = 0x8086  # Intel device
     fbm.manifest_header.date = SIGNING_DATE
@@ -646,7 +662,8 @@ def create_image(payload_file, outfile, privkey, hash_option, svn):
     fbm.manifest_header.signature[:] = [0] * 384
     (signature, key) = compute_signature(bytes(data[fbm_offset:fbm_limit]),
                                          privkey,
-                                         hash_option)
+                                         hash_option,
+                                         rsa_pad_mode)
     hex_dump(signature, msg="FBM signature")
 
     puk = get_pubkey_from_privkey(privkey)
@@ -718,13 +735,8 @@ def verify_fkm(infile_signed, pubkey_pem_file, fbm_pubkey_file=None):
         hash_expected = fkm.key_usage_array[0].key_hash
 
         # Calculate public key hash in FKM header
-        if fkm.key_usage_array[0].key_hash_algorithm == 2:
-            hash_option = "sha256"
-        elif fkm.key_usage_array[0].key_hash_algorithm == 3:
-            hash_option = "sha384"
-        elif fkm.key_usage_array[0].key_hash_algorithm == 4:
-            hash_option = "sha512"
-        else:
+        hash_option = get_key(HASH_CHOICES, fkm.key_usage_array[0].key_hash_algorithm)
+        if hash_option is None:
             raise ValueError("Invalid hash algorithm in FKM key usage data")
 
         # Verify FBM public key with FKM data
@@ -747,20 +759,27 @@ def verify_fkm(infile_signed, pubkey_pem_file, fbm_pubkey_file=None):
         fkm.manifest_header.exponent[:] = [0] * 4
         fkm.manifest_header.signature[:] = [0] * 384
 
-        if fkm.manifest_header.version == 0x10000:
-            hash_option = "sha256"
-        elif fkm.manifest_header.version == 0x11000:
-            hash_option = "sha384"
-        elif fkm.manifest_header.version == 0x12000:
-            hash_option = "sha512"
-        else:
-            raise ValueError("Invalid hash algorithm in FKM header")
+        logger.info("verify_header: %s",hex(fkm.manifest_header.version))
+        hash_id =  fkm.manifest_header.version & 0x0F000
+        logger.info("hash_Id: %s",hex(hash_id))
+        hash_option = get_key(HASH_CHOICES,hash_id)
+                 
+        logger.info("hash option %s",hash_option)
+
+        if hash_option == None:
+            raise Exception("Invalid hash algorithm in FKM header")
+        rsa_pad_id = fkm.manifest_header.version & 0xF0000
+        rsa_pad_mode = get_key(RSA_PAD_MODE,rsa_pad_id)
+       
+        if not rsa_pad_mode:
+            raise Exception("Invalid RSA algorithm in FKM header")   
 
         # Convert public key into PEM file
         verify_signature(fkm_sig,
                          bytes(fkm_data[fkm_offset:fkm_limit]),
                          pubkey_pem_file,
-                         hash_option)
+                         hash_option,
+                         rsa_pad_mode)
 
         logger.info("Okay")
     except Exception as e:
@@ -768,7 +787,7 @@ def verify_fkm(infile_signed, pubkey_pem_file, fbm_pubkey_file=None):
         exit(1)
 
 
-def verify_image(infile_signed, pubkey_pem_file, hash_option):
+def verify_image(infile_signed, pubkey_pem_file, hash_option, rsa_pad_mode):
     """Verify a signed image with public key end-to-end"""
 
     with open(infile_signed, "rb") as in_fd:
@@ -812,7 +831,8 @@ def verify_image(infile_signed, pubkey_pem_file, hash_option):
         verify_signature(fbm_sig,
                          bytes(in_data[fbm_offset:fbm_limit]),
                          pubkey_pem_file,
-                         hash_option)
+                         hash_option,
+                         rsa_pad_mode)
         logger.info("Okay")
     except Exception:
         logger.critical("Failed")
@@ -860,6 +880,7 @@ def main():
         build_fkm(args.private_key,
                   [args.pubkey_pem_file],
                   args.hash_option,
+                  args.rsa_padding_mode,
                   args.output_file,
                   args.svn)
 
@@ -885,6 +906,13 @@ def main():
         help="Hashing algorithm",
     )
     fkmp.add_argument(
+        "-m",
+        "--rsa_padding_mode",
+        default="pss",
+        choices=['pss','pkcs1'],
+        help="RSA padding algorithm",
+    )
+    fkmp.add_argument(
         "-o",
         "--output-file",
         type=str,
@@ -907,6 +935,7 @@ def main():
                      args.output_file,
                      args.private_key,
                      args.hash_option,
+                     args.rsa_padding_mode,
                      args.svn)
 
     signp = sp.add_parser("sign", help="Sign an image")
@@ -933,6 +962,13 @@ def main():
         default="sha384",
         choices=list(HASH_CHOICES.keys()),
         help="Hashing algorithm",
+    )
+    signp.add_argument(
+        "-m",
+        "--rsa_padding_mode",
+        default="pss",
+        choices=['pss','pkcs1'],
+        help="RSA padding algorithm",
     )
     signp.add_argument(
         "-n",
@@ -979,7 +1015,7 @@ def main():
 
     def cmd_verify(args):
         logger.info("Verifying a signed image ...")
-        verify_image(args.input_file, args.pubkey_pem_file, args.hash_option)
+        verify_image(args.input_file, args.pubkey_pem_file, args.hash_option, args.rsa_padding_mode)
 
     verifyp = sp.add_parser("verify", help="Verify a signed image")
     verifyp.add_argument(
@@ -998,6 +1034,13 @@ def main():
         default="sha384",
         choices=list(HASH_CHOICES.keys()),
         help="Hashing algorithm",
+    )
+    verifyp.add_argument(
+        "-m",
+        "--rsa_padding_mode",
+        default="pss",
+        choices=['pss','pkcs1'],
+        help="RSA padding algorithm",
     )
     verifyp.set_defaults(func=cmd_verify)
 
