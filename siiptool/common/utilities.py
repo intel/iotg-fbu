@@ -9,6 +9,7 @@ import os
 import subprocess
 import sys
 import click
+from collections.abc import Iterable
 from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import common.logger as logging
@@ -37,6 +38,23 @@ def get_key_and_value(dict, lookup_value, value_loc):
             return key, value
     return None, None
 
+def get_key(table,lookup_value):
+    """Finds they key given a value for single values and list of values """
+
+    value_list = list(table.values())
+
+    # If each key only have one value, to see if lookup_value is in the dictionary
+    if isinstance(value_list[0], Iterable) == False:
+        if lookup_value in value_list:
+            return list(table.keys())[value_list.index(lookup_value)]
+        return None
+   
+    # Each key has a list of associate values, check to see if the lookup_value matches value for the key.
+    # Note this assumes each list Value is unique to each key.
+    for key in table:
+        for value in table[key]:
+            if (value == lookup_value):
+               return key
 
 def cleanup(files):
     for file in files:
