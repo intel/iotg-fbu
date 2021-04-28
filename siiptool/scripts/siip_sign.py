@@ -27,6 +27,7 @@ from common.banner import banner
 import common.logger as logging
 from common.utilities import get_key 
 
+
 logger = logging.getLogger("siip_sign")
 
 try:
@@ -308,14 +309,16 @@ def get_hash_from_pubkey(pubkey_pem, hash_option):
 
     return hash_result
 
-def get_padding(rsa_pad_mode, hash_option):
+def get_padding(rsa_pad_mode, hash_alg):
     """determine RSA-PSS or RSA-PKCS1 padding mode """
     
     if rsa_pad_mode == "pss":
+        #It is recommended that the MGF hash function be the same as the scheme hash algorithm
+        #and that the salt length bethe length of the output of the hash function.
+       
         mgf = crypto_padding.MGF1
-        mgf = mgf(HASH_CHOICES[hash_option][0])
-        
-        return crypto_padding.PSS(mgf, crypto_padding.PSS.MAX_LENGTH)
+        mgf = mgf(hash_alg)
+        return crypto_padding.PSS(mgf, hash_alg.digest_size)
     
     return crypto_padding.PKCS1v15()
 
@@ -329,7 +332,7 @@ def compute_signature(data, privkey_pem, hash_option, rsa_pad_mode):
 
     # Calculate signature using private key
     signature = key.sign(bytes(data),
-                         get_padding(rsa_pad_mode,hash_option),
+                         get_padding(rsa_pad_mode, HASH_CHOICES[hash_option][0]),
                          HASH_CHOICES[hash_option][0])
 
     return (signature, key)
@@ -344,7 +347,7 @@ def verify_signature(signature, data, pubkey_pem, hash_option, rsa_pad_mode):
 
     puk.verify(signature,
                data,
-               get_padding(rsa_pad_mode, hash_option),
+               get_padding(rsa_pad_mode, HASH_CHOICES[hash_option][0]),
                HASH_CHOICES[hash_option][0])
 
 def compute_pubkey_hash(pubkey_pem_file, hash_option):
