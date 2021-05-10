@@ -14,6 +14,7 @@ from __future__ import print_function
 import os
 import sys
 import argparse
+import click
 from datetime import datetime
 
 from enum import Enum
@@ -877,9 +878,18 @@ def main():
     ap = argparse.ArgumentParser(prog=__prog__, description=__doc__)
 
     sp = ap.add_subparsers(help="command")
+    
 
     def cmd_fkmgen(args):
         logger.info("Creating FKM using key {}".format(args.private_key))
+
+        if args.no_pem_file is True:
+            if not (click.confirm("FKM does not verify the public key hashes in FBM. Do you want to continue?",
+                    abort=False)):
+                logger.critical("%s was selected instead of providing a Public Key. Exiting tool!", 
+                                args.no_pem_file)
+                sys.exit(2)
+
         build_fkm(args.private_key,
                   [args.pubkey_pem_file],
                   args.hash_option,
@@ -888,6 +898,8 @@ def main():
                   args.svn)
 
     fkmp = sp.add_parser("fkmgen", help="Generate Firmware Key Manifest (FKM)")
+    fkmpgroup = fkmp.add_mutually_exclusive_group(required=True)
+
     fkmp.add_argument(
         "-k",
         "--private-key",
@@ -895,11 +907,18 @@ def main():
         type=str,
         help="RSA signing key in PEM format"
     )
-    fkmp.add_argument(
-        "-p",
-        "--pubkey-pem-file",
+    fkmpgroup.add_argument(
+        "-p", 
+        "--pubkey-pem-file", 
         type=str,
-        help="Public key in PEM format. If not provided, No FBM verification.",
+        help="Public key in PEM format. FKM will verify the public key hashes in FBM.",
+    )
+    fkmpgroup.add_argument(
+        "-q",
+        "--no-pem-file",
+        action="store_true",
+        help="FKM does not verify the public key hashes in FBM. This is not \
+              recommended for production environment.",
     )
     fkmp.add_argument(
         "-s",
