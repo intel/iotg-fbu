@@ -149,10 +149,10 @@ Done!
 
 The SIIP Signing tool generates security signatures and auxiliary data for a _payload_ file. When BIOS loads the payload (code or data) during boot, it verifies the payload authenticity and integrity first.
 
-For example, to sign an image using RSA private key `priv3k.pem`, run:
+For example, to sign an image with `priv3k.pem` which is a RSA-PSS private key with SHA384 hashing, run:
 
 ```
-python3 siip_sign.py sign -i pse.bin -k priv3k.pem -o pse.signed.bin
+python3 siip_sign.py sign -i pse.bin -k priv3k.pem -s sha384 -m pss -o pse.signed.bin
 ```
 
 The signed image (e.g. `pse.signed.bin`), is the input file to be either stitched into IFWI image, or for creating a capsule image for firmware update.
@@ -163,18 +163,21 @@ NOTE: At present, SIIP signing tool supports only PSE firmware signing.
 
 The Sub-region Signing tool allows users to generate a signed BIOS Sub-Region before loading it into the BIOS UEFI to enhance the security of the sub-region firmware.
 
-For example, to sign an sub-region using RSA private key `signing.pem`, run:
+For example, to sign a TCC sub-region provided by a vendor with the given Vendor GUID 7F6AD829-15E9-4FDE-9DD3-0548BB7F56F3 using RSA private key `signing.pem`, run:
 
 ```
-python3 subregion_sign.py --name  tcc --sginer signing.pem --signer_type rsa
+python3 subregion_sign.py --name  tcc --signer signing.pem --signer_type rsa
                           --vendor-guid 7F6AD829-15E9-4FDE-9DD3-0548BB7F56F3
                           TccConfigData_Raw.bin --output TccConfigData_signed.bin
 
 ```
+**_NOTE 1:__** Vendor GUID is specific value given by the vendor to the subregion being signed. Check BIOS implementation for the correct value.
+
+**_NOTE 2:__** The Vendor GUID used above is a default non-production GUID for sub-region.
 
 The signed image (e.g. `TccConfigData_signed`), is the input file to be either stitched into IFWI image, or for creating a capsule image for firmware update.
 
-NOTE: At present, Sub-region signing tool only test with a TCC sub-region. The PKCS#7 signing has not been tested at this time.
+**_NOTE 3:__** At present, Sub-region signing tool only test with a TCC sub-region. The PKCS#7 signing has not been tested at this time.
 
 ## License
 
