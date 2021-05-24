@@ -157,7 +157,7 @@ python3 siip_sign.py sign -i pse.bin -k priv3k.pem -s sha384 -m pss -o pse.signe
 
 The signed image (e.g. `pse.signed.bin`), is the input file to be either stitched into IFWI image, or for creating a capsule image for firmware update.
 
-NOTE: At present, SIIP signing tool supports only PSE firmware signing.
+> **_NOTE:_** SIIP signing tool supports only PSE firmware signing.
 
 ### Sub-region Signing tool
 
@@ -171,13 +171,14 @@ python3 subregion_sign.py --name  tcc --signer signing.pem --signer_type rsa
                           TccConfigData_Raw.bin --output TccConfigData_signed.bin
 
 ```
-**_NOTE 1:__** Vendor GUID is specific value given by the vendor to the subregion being signed. Check BIOS implementation for the correct value.
 
-**_NOTE 2:__** The Vendor GUID used above is a default non-production GUID for sub-region.
+> **_NOTE 1_:** Vendor GUID is specific value given by the vendor to the subregion being signed. Check BIOS implementation for the correct value.
+
+> **_NOTE 2_:** The Vendor GUID used above is a default non-production GUID for sub-region.
 
 The signed image (e.g. `TccConfigData_signed`), is the input file to be either stitched into IFWI image, or for creating a capsule image for firmware update.
 
-**_NOTE 3:__** At present, Sub-region signing tool only test with a TCC sub-region. The PKCS#7 signing has not been tested at this time.
+> **_NOTE 3_:** Sub-region signing tool only test with a TCC sub-region. The PKCS#7 signing has not been tested at this time.
 
 ## License
 
