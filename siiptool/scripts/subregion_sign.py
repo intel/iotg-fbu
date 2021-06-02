@@ -88,7 +88,7 @@ class UefiSubregAuthenClass:
         uefi_subreg_authen_hdr = struct.pack(
             self._StructAuthInfoFormat,
             self.w_name,
-            self.vendor_guid.bytes,
+            self.vendor_guid.bytes_le,
             self.w_revision,
             self.dw_length,
             self.cert_type.bytes_le,
@@ -382,7 +382,7 @@ def main():
     uefi_subreg_authen.payload = payload
 
     # add Vendor Guid to Payload
-    payload = uefi_subreg_authen.vendor_guid.bytes + payload
+    payload = uefi_subreg_authen.vendor_guid.bytes_le + payload
 
     # calculate the signature store in structure
     cert_data = generate_signature(cert_info["openssl_cmd"], payload)
