@@ -17,6 +17,7 @@ import shutil
 import re
 import uuid
 import click
+import json
 from pathlib import Path
 
 
@@ -30,8 +31,7 @@ from common.subregion_descriptor import SubRegionDescriptor
 from common.subregion_image import generate_sub_region_image
 from common.ifwi import IFWI_IMAGE
 from common.firmware_volume import FirmwareDevice
-from common.siip_constants import IP_OPTIONS
-from common.tools_path import FMMT, GENFV, GENFFS, GENSEC, LZCOMPRESS, TOOLS_DIR
+from common.tools_path import FMMT, GENFV, GENFFS, GENSEC, LZCOMPRESS, TOOLS_DIR, IP_OPTIONS_CFG
 from common.tools_path import RSA_HELPER, FMMT_CFG
 from common.siip_constants import VERSION as __version__
 from common.banner import banner
@@ -60,12 +60,14 @@ GUID_FVADVANCED = uuid.UUID("B23E7388-9953-45C7-9201-0473DDE5487A")
 GUID_FVPOSTMEMORY = uuid.UUID("9DFE49DB-8EF0-4D9C-B273-0036144DE917")
 GUID_FVFSPS = uuid.UUID("8C8CE578-8A3D-4F1C-9935-896185C32DD3")  # EFI_FIRMWARE_FILE_SYSTEM2_GUID
 
+with open(IP_OPTIONS_CFG) as ip_options_config_file:
+    ip_options = json.load(ip_options_config_file)
 
 def search_for_fv(inputfile, ipname):
     """Search for the firmware volume."""
 
     # use to find the name of the firmware to locate the firmware volume
-    build_list = IP_OPTIONS.get(ipname)
+    build_list = ip_options.get(ipname)
 
     ui_name = build_list[0][1]
 
@@ -135,7 +137,7 @@ def create_commands(filenames, ipname, fwvol):
     """Create Commands for the merge and replace of firmware section."""
 
     inputfiles, num_replace_files = sbrgn_image.ip_inputfiles(filenames, ipname)
-    build_list = IP_OPTIONS.get(ipname)
+    build_list = ip_options.get(ipname)
 
     # get the file name to be used to replace firmware volume
     ui_name = build_list[0][1]
@@ -165,7 +167,7 @@ def merge_and_replace(filename, guid_values, fwvol):
 def parse_cmdline():
     """ Parsing and validating input arguments."""
 
-    visible_ip_list = list(IP_OPTIONS.keys())
+    visible_ip_list = list(ip_options.keys())
     visible_ip_list.remove("obbpei_digest")
     visible_ip_list.remove("obbdxe_digest")
 
