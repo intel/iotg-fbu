@@ -4,8 +4,8 @@
 # Copyright (c) 2019, Intel Corporation. All rights reserved.
 # SPDX-License-Identifier: BSD-2-Clause
 #
-
-
+from io import open
+import json
 import os
 import struct
 import sys
@@ -14,8 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from common import subregion_descriptor as subrgn_descptr
 from common.utilities import get_key_and_value
-from common.siip_constants import IP_OPTIONS
-from common.tools_path import GENFV, GENFFS, GENSEC, LZCOMPRESS
+from common.tools_path import GENFV, GENFFS, GENSEC, LZCOMPRESS, IP_OPTIONS_CFG
 
 ##############################################################################
 #
@@ -56,14 +55,17 @@ FFS_FILETYPE = {
     "peim": "EFI_FV_FILETYPE_PEIM",
 }
 
+with open(IP_OPTIONS_CFG) as ip_options_config_file:
+    ip_options = json.load(ip_options_config_file)
+
 # Translate IP_OPTIONS dict into a GUID-to-NAME lookup dict
 section_name_lookup_table = {
-    option[-1][1]: option[0][1] for option in IP_OPTIONS.values()}
+    option[-1][1]: option[0][1] for option in ip_options.values()}
 
 
 def ip_info_from_guid(lookup_val):
     """ returns the key and corresponding value """
-    return get_key_and_value(IP_OPTIONS, lookup_val, [-1, 1])
+    return get_key_and_value(ip_options, lookup_val, [-1, 1])
 
 
 def guid_section(sec_type, guid, guid_attrib, inputfile):

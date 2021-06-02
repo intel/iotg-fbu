@@ -27,6 +27,7 @@ elif sys.platform == 'linux':
 
 RSA_HELPER = os.path.join(TOOLS_DIR, "rsa_helper.py")
 FMMT_CFG = os.path.join(TOOLS_DIR, "FmmtConf.ini")
+IP_OPTIONS_CFG = os.path.join(BASE_DIR, "common", "ip_options.json")
 
 EDK2_CAPSULE_TOOL = os.path.abspath(os.path.join(THIRD_PARTY_DIR,
                                                  "edk2_capsule_tool",

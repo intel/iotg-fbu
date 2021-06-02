@@ -1,0 +1,30 @@
+[
+	"<IP_NAME>": [
+		["ui", "<UI_NAME>"], 								# UI name, must be the first section
+		["raw", "<Type>"],									# creates EFI_SECTION_RAW
+															# Type: Compress method type can be PI_NONE or PI_STD.
+		["lzma", "-e"],  									# Compressed section, optional
+															# "-e": compress, "-d": decompress
+		["<free>|<dxe>|<peim>", "<FileGuid>", "FileAlign"],	# Firmware file system type
+															# free: EFI_FV_FILETYPE_FREEFORM
+															# dxe: EFI_FV_FILETYPE_DRIVER
+															# peim: EFI_FV_FILETYPE_PEIM
+															# FileGuid: is one module guid,
+															# Its format is xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+															# FileAlign points to file alignment
+															# [None|2|4|8|16|128|512|1K|4K|32K|64K]
+		["None", "<SectionAlign*>"]							# Generates the all section
+															# SectionAlign points to section alignment,
+															# which support the alignment scope 1~64K. 
+		["guid", "<GuidValue>", "<GuidAttr>"], 				# Generates the GUID defined section
+															# GuidValue is one specific vendor guid value.
+															# Its format is xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+															# GuidAttr is guid section atttributes, which may be
+															# PROCESSING_REQUIRED, AUTH_STATUS_VALID and NONE.
+		["pe32", "None"],									# Creates EFI_SECTION_PE32		
+		["cmprs", "<Type>"],								# Creates EFI_SECTION_COMPRESSION
+															# Type: Compress method type can be PI_NONE or PI_STD.
+		["depex", "None"]									# Creates EFI_SECTION_PEI_DEPEX
+	
+	]
+]

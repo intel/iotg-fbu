@@ -1,0 +1,135 @@
+{
+	"pse": 
+		[
+			["ui", "IntelPseFw"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["lzma", "-e"], 
+			["guid", "EE4E5898-3914-4259-9D6E-DC7BD79403CF", "PROCESSING_REQUIRED"], 
+			["free", "EBA4A247-42C0-4C11-A167-A4058BC9D423", "1K"]
+		],
+	"fkm": 
+		[
+			["ui", "SiipFkm"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["lzma", "-e"], 
+			["guid", "EE4E5898-3914-4259-9D6E-DC7BD79403CF", "PROCESSING_REQUIRED"], 
+			["free", "8AFFBA0F-C312-4717-9DD5-6AB1FE5FCB47", "1K"]
+		],
+	"tmac": 
+		[
+			["ui", "IntelFvTsnMacAddr"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["free", "12E29FB4-AA56-4172-B34E-DD5F4B440AA9", null]
+		],
+	"tsnip": 
+		[
+			["ui", "IntelPseTsnIpConfig"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["free", "40BD5BCD-094F-43B3-8D8D-1D72F850C3CB", null]
+		],
+	"tsn": 
+		[
+			["ui", "IntelTsnConfig"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["free", "4FB7994D-D878-4BD1-8FE0-777B732D0A31", null]
+		],
+	"tcc": 
+		[
+			["ui", "IntelTccConfig"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["free", "7F6AD829-15E9-4FDE-9DD3-0548BB7F56F3", null]
+		],
+	"tccc": 
+		[
+			["ui", "IntelFvTccCacheCfg"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["free", "0C1A77B3-FD36-46F9-8AD0-598367053641", null]
+		],
+	"tccb": 
+		[
+			["ui", "IntelFvTccBuffer"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["free", "F20527A7-B7B0-4630-A6BD-ED10CD48B94F", null]
+		],
+	"tccp": 
+		[
+			["ui", "IntelFvPtcmBinary"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["lzma", "-e"], 
+			["guid", "EE4E5898-3914-4259-9D6E-DC7BD79403CF", "PROCESSING_REQUIRED"], 
+			["free", "0240AD7B-00DA-43AF-9ED4-73B8DF48CD0B", null]
+		],
+	"oob": 
+		[
+			["ui", "IntelOobConfig"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["free", "4DB2A373-C936-4544-AA6D-8A194AA9CA7F", null]
+		],
+	"oob_rootca": 
+		[
+			["ui", "IntelOobRootCA"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["free", "2F4DE35A-0D52-44FC-ABF3-75B8AA51F434", null]
+		],
+	"vbt": 
+		[
+			["ui", "IntelGopVbt"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["free", "56752da9-de6b-4895-8819-1945b6b76c22", null]
+		],
+	"obbpei_digest": 
+		[
+			["ui", "ObbPeiDigest"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["free", "F57757FC-2603-404F-AAE2-34C6232388E8", null]
+		],
+	"obbdxe_digest": 
+		[
+			["ui", "ObbDxeDigest"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["free", "32198477-7337-40E4-897D-BC33F018B42F", null]
+		],
+	"gop": 
+		[
+			["ui", "IntelGopDriver"], 
+			["pe32", null], 
+			[null], 
+			["dxe", "FF0C8745-3270-4439-B74F-3E45F8C77064", null]
+		],
+	"gfxpeim": 
+		[
+			["ui", "IntelGraphicsPeim"], 
+			["pe32", null], 
+			[null, "32", "1"], 
+			["cmprs", "PI_STD"], 
+			["peim", "76ED893A-B2F9-4C7D-A05F-1EA170ECF6CD", null]
+		],
+	"isi": 
+		[
+			["ui", "IntelIsiConfig"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["free", "6714A5AD-024D-42E0-883A-2FBD0A311C24", null]
+		],
+		"undi": 
+		[
+			["ui", "IntelGbeUndi"],
+			["pe32", null],
+			[null],
+			["dxe", "720E6687-43C4-84EA-E1B5-23AAED359840", null]
+		]
+}
