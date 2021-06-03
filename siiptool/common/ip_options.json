@@ -45,6 +45,13 @@
 			[null], 
 			["free", "7F6AD829-15E9-4FDE-9DD3-0548BB7F56F3", null]
 		],
+	"tccs": 
+		[
+			["ui", "IntelFvTccStreamCfg"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["free", "7F6AD829-15E9-4FDE-9DD3-0548BB7F56F3", null]
+		],
 	"tccc": 
 		[
 			["ui", "IntelFvTccCacheCfg"], 
@@ -62,6 +69,15 @@
 	"tccp": 
 		[
 			["ui", "IntelFvPtcmBinary"], 
+			["raw", "PI_NONE"], 
+			[null], 
+			["lzma", "-e"], 
+			["guid", "EE4E5898-3914-4259-9D6E-DC7BD79403CF", "PROCESSING_REQUIRED"], 
+			["free", "0240AD7B-00DA-43AF-9ED4-73B8DF48CD0B", null]
+		],
+	"tcrl": 
+		[
+			["ui", "IntelFvTccCrlBinary"], 
 			["raw", "PI_NONE"], 
 			[null], 
 			["lzma", "-e"], 
