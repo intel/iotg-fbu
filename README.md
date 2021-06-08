@@ -6,6 +6,7 @@ included to generate signed sub-region image.
 It supports Windows 10, Ubuntu Linux, or Yocto Linux.
 
 - [Firmware and BIOS Utilities (FBU)](#firmware-and-bios-utilities-fbu)
+  - [Guidelines for Using Signing Keys](#guidelines-for-using-signing-keys)
   - [Installation](#installation)
   - [Usage](#usage)
     - [Sub-region capsule tool](#sub-region-capsule-tool)
@@ -16,7 +17,18 @@ It supports Windows 10, Ubuntu Linux, or Yocto Linux.
     - [Signing tool](#signing-tool)
   - [License](#license)
 
-Note: if you found out the tool is not compatible with your IFWI version, please fallback to use the previous release version of the tool.
+## Guidelines for Using Signing Keys
+
+SIIP tools supports signing method using asymmetric algorithms with RSA key. The following guidelines should be followed in performing digital signatures:
+
+* RSA-3072 with hash function SHA384,512 and message formatting PSS
+* Use appropriately sized keys and key parameters 
+    * For Integer Factorization or Discrete Logarithm algorithms use modulus size of at least 3072 bits.
+    * Use RSA public exponent value equal to 65537
+    * Use approved curve for EC algorithms: NIST P-384, NIST P-521 or Ed448
+
+> **_NOTE:_** This repository does NOT provide any keys for security reasons.
+
 
 ## Installation
 
