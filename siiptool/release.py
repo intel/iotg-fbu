@@ -64,10 +64,14 @@ def generate_exe():
         subprocess.check_call(r"pyinstaller scripts/siip_stitch.py "
                               r"--add-binary "
                               r"thirdparty/Bin/Win32/;thirdparty/Bin/Win32 "
+                              r"--add-data "
+                              r"common/ip_options.json;common "
                               r"--onefile --distpath ./bin")
         subprocess.check_call(r"pyinstaller scripts/subregion_capsule.py "
                               r"--add-binary "
                               r"thirdparty/Bin/Win32/;thirdparty/Bin/Win32 "
+                              r"--add-data "
+                              r"common/ip_options.json;common "
                               r"--onefile --distpath ./bin")
         subprocess.check_call(r"pyinstaller scripts/subregion_sign.py "
                               r"--add-binary "
@@ -80,11 +84,15 @@ def generate_exe():
         subprocess.check_call(r"pyinstaller scripts/siip_stitch.py "
                               r"--add-binary "
                               r"thirdparty/Bin/Linux/:thirdparty/Bin/Linux "
+                              r"--add-data "
+                              r"common/ip_options.json;common "
                               r"--onefile --distpath ./bin",
                               shell=True)
         subprocess.check_call(r"pyinstaller scripts/subregion_capsule.py "
                               r"--add-binary "
                               r"thirdparty/Bin/Linux/:thirdparty/Bin/Linux "
+                              r"--add-data "
+                              r"common/ip_options.json;common "
                               r"--onefile --distpath ./bin",
                               shell=True)
         subprocess.check_call(r"pyinstaller scripts/subregion_sign.py "
