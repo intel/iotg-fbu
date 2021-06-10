@@ -85,14 +85,14 @@ def generate_exe():
                               r"--add-binary "
                               r"thirdparty/Bin/Linux/:thirdparty/Bin/Linux "
                               r"--add-data "
-                              r"common/ip_options.json;common "
+                              r"common/ip_options.json:common "
                               r"--onefile --distpath ./bin",
                               shell=True)
         subprocess.check_call(r"pyinstaller scripts/subregion_capsule.py "
                               r"--add-binary "
                               r"thirdparty/Bin/Linux/:thirdparty/Bin/Linux "
                               r"--add-data "
-                              r"common/ip_options.json;common "
+                              r"common/ip_options.json:common "
                               r"--onefile --distpath ./bin",
                               shell=True)
         subprocess.check_call(r"pyinstaller scripts/subregion_sign.py "
