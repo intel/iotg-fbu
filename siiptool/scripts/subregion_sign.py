@@ -158,7 +158,7 @@ def get_certifcation_info(cl_inputs, signer):
     cert_info = CERT_TYPE.get(cl_inputs.signer_type)
 
     # Create openSSL command 1
-    cmd = f"{path} {cert_info[1]} {signer}"
+    cmd = f'{path} {cert_info[1]}  "{signer}"'
 
     # Create openSSL command 2
     if cert_info[2] is not None:
