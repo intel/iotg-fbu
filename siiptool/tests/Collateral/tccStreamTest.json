@@ -1,0 +1,19 @@
+{
+  "FmpGuid": "BF2AE378-01E0-4605-9E3B-2EE2FC7339DE",
+  "Version": 1,
+  "FV" :
+  {
+    "FvGuid": "47B18F92-5ADC-4739-8D70-9BFFCD9A2EC2",
+    "FfsFiles":
+    [
+      {
+        "FileGuid": "7F6AD829-15E9-4FDE-9DD3-0548BB7F56F3",
+        "Compression": false,
+        "Data" :
+        [
+          [ "TccStreamBin", "FILE", 0, "tccStreamConfigSigned.bin" ]
+        ]
+      }
+    ]
+  }
+}
