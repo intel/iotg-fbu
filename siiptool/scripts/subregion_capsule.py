@@ -134,15 +134,6 @@ def create_arg_parser():
 
 if __name__ == "__main__":
 
-    # Check if openssl is installed
-    try:
-        p = subprocess.run(['openssl', 'version'],
-                            stdout=subprocess.PIPE,
-                            universal_newlines=True)
-        print("openssl version: {}".format(p.stdout))
-    except:
-        print("OpenSSL is not installed or missing in PATH!\n")
-        exit(2)
 
     parser = create_arg_parser()
     args = parser.parse_args()
@@ -168,6 +159,10 @@ if __name__ == "__main__":
     ):
         print('All-or-none of the certificate files must be provided.')
         exit(2)
+
+    
+    # Check if openssl is installed or at given path
+    utils.check_for_tool('openssl', 'version', tool_path=args.SigningToolPath)
 
     sub_region_fv_file = os.path.join(os.path.curdir, "SubRegionFv.fv")
     sub_region_image_file = os.path.join(os.path.curdir, "SubRegionImage.bin")
