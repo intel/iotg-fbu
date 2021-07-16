@@ -105,6 +105,8 @@ class SubRegionDescriptor(object):
         self.fv = None
         self.s_fv_guid = None
         self.fv_guid = None
+        self.s_fv_block_size = None
+        self.s_fv_num_block = None
         self.ffs_files = []
 
     def parse_json_data(self, json_file):
@@ -122,6 +124,11 @@ class SubRegionDescriptor(object):
 
                 self.fv = desc_buffer["FV"]
                 self.s_fv_guid = self.fv["FvGuid"]
+                if "FvBlockSize" in self.fv:
+                    self.s_fv_block_size = self.fv["FvBlockSize"]
+                if "FvNumBlock" in self.fv:
+                    self.s_fv_num_block = self.fv["FvNumBlock"]
+
                 try:
                     self.fv_guid = uuid.UUID(self.s_fv_guid)
                 except ValueError:

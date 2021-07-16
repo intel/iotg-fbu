@@ -32,7 +32,6 @@ __prog__ = "subregion_sign"
 
 TOOLNAME = "Sub-Region Signing Tool"
 
-banner(TOOLNAME, __version__)
 
 if sys.version_info < (3, 6):
     raise Exception("Python 3.6 is the minimal version required")
@@ -428,4 +427,5 @@ def main():
 
 
 if __name__ == "__main__":
+    banner(TOOLNAME, __version__)
     main()

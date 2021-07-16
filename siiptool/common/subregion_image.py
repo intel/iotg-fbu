@@ -183,19 +183,26 @@ def build_fv_from_ffs_files(sub_region_desc, out_file, ffs_file_list):
             # Use other files just add with file input option in the same command;
             fv_cmd += ["-f", file]
         else:
-            fv_cmd = create_gen_fv_command(sub_region_desc.s_fv_guid, out_file, file)
+            fv_cmd = create_gen_fv_command(sub_region_desc.s_fv_guid, out_file, file,
+             block_size=sub_region_desc.s_fv_block_size, num_block=sub_region_desc.s_fv_num_block)
 
     fv_cmd_list.append(fv_cmd)
 
     return fv_cmd_list
 
 
-def create_gen_fv_command(fv_guid, output_fv_file, ffs_file, input_fv_file=None,):
+def create_gen_fv_command(fv_guid, output_fv_file, ffs_file,
+ input_fv_file=None, block_size = None, num_block = None):
     gen_fv_cmd = [GENFV]
     if input_fv_file is not None:
         gen_fv_cmd += ["-i", input_fv_file]
     gen_fv_cmd += ["-o", output_fv_file]
-    gen_fv_cmd += ["-b", "0x1000"]
+    if block_size is None:
+        gen_fv_cmd += ["-b", "0x1000"]
+    else:
+        gen_fv_cmd += ["-b", block_size]
+    if num_block is not None:
+        gen_fv_cmd += ["-n", num_block]
     gen_fv_cmd += ["-f", ffs_file]
     gen_fv_cmd += [
         "-g",

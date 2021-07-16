@@ -36,9 +36,6 @@ __prog__ = "subregion_capsule"
 
 TOOLNAME = "Sub-Region Capsule Tool"
 
-banner(TOOLNAME, __version__)
-
-
 def generate_sub_region_fv(
         image_file,
         sub_region_descriptor,
@@ -134,7 +131,8 @@ def create_arg_parser():
 
 if __name__ == "__main__":
 
-
+    banner(TOOLNAME, __version__)
+    
     parser = create_arg_parser()
     args = parser.parse_args()
     gen_cap_args = []
