@@ -37,7 +37,6 @@ __prog__ = "subregion_capsule"
 TOOLNAME = "Sub-Region Capsule Tool"
 
 def generate_sub_region_fv(
-        image_file,
         sub_region_descriptor,
         output_fv_file=os.path.join(os.path.curdir, "SubRegion.FV")
 ):
@@ -74,7 +73,6 @@ def generate_sub_region_fv(
                      sub_region_descriptor,
                      output_fv_file,
                      fv_ffs_file_list)
-
     if utils.execute_cmds(logger, fv_cmd_list) == 1:
         print("Error generating FV File")
         exit(-1)
@@ -129,45 +127,38 @@ def create_arg_parser():
     return my_parser
 
 
-if __name__ == "__main__":
+def generate_sub_region_capsule( sub_region_desc,
+        outputCapsuleFile=os.path.join(os.path.curdir, "capsule.bin"),
+        signingToolPath = None,
+        OpenSslSignerPrivateCertFile = None,
+        OpenSslOtherPublicCertFile = None,
+        OpenSslTrustedPublicCertFile = None
+    ):
+        
+    sub_region_fv_file = os.path.join(os.path.curdir, "SubRegionFv.fv")
 
-    banner(TOOLNAME, __version__)
-    
-    parser = create_arg_parser()
-    args = parser.parse_args()
     gen_cap_args = []
     if all(
             [
-                args.OpenSslSignerPrivateCertFile,
-                args.OpenSslOtherPublicCertFile,
-                args.OpenSslTrustedPublicCertFile
+                OpenSslSignerPrivateCertFile,
+                OpenSslOtherPublicCertFile,
+                OpenSslTrustedPublicCertFile
             ]
     ):
-        gen_cap_args += ["--signer-private-cert",
-                         args.OpenSslSignerPrivateCertFile]
-        gen_cap_args += ["--other-public-cert", args.OpenSslOtherPublicCertFile]
-        gen_cap_args += ["--trusted-public-cert",
-                         args.OpenSslTrustedPublicCertFile]
+        gen_cap_args += ["--signer-private-cert", OpenSslSignerPrivateCertFile]
+        gen_cap_args += ["--other-public-cert", OpenSslOtherPublicCertFile]
+        gen_cap_args += ["--trusted-public-cert", OpenSslTrustedPublicCertFile]
     elif any(
             [
-                args.OpenSslSignerPrivateCertFile,
-                args.OpenSslOtherPublicCertFile,
-                args.OpenSslTrustedPublicCertFile
+                OpenSslSignerPrivateCertFile,
+                OpenSslOtherPublicCertFile,
+                OpenSslTrustedPublicCertFile
             ]
     ):
         print('All-or-none of the certificate files must be provided.')
-        exit(2)
-
-    
-    # Check if openssl is installed or at given path
-    utils.check_for_tool('openssl', 'version', tool_path=args.SigningToolPath)
-
-    sub_region_fv_file = os.path.join(os.path.curdir, "SubRegionFv.fv")
-    sub_region_image_file = os.path.join(os.path.curdir, "SubRegionImage.bin")
-    sub_region_desc = subrgn_descrptr.SubRegionDescriptor()
-    sub_region_desc.parse_json_data(args.InputFile)
-    generate_sub_region_fv(sub_region_image_file, sub_region_desc,
-                           sub_region_fv_file)
+        return 2
+        
+    generate_sub_region_fv(sub_region_desc, sub_region_fv_file)
 
     gen_cap_args += ["--encode"]
     gen_cap_args += ["--guid", sub_region_desc.s_fmp_guid]
@@ -175,11 +166,11 @@ if __name__ == "__main__":
     gen_cap_args += ["--lsv", "0"]
     gen_cap_args += ["--capflag", "PersistAcrossReset"]
     gen_cap_args += ["--capflag", "InitiateReset"]
-    gen_cap_args += ["-o", args.OutputCapsuleFile]
+    gen_cap_args += ["-o", outputCapsuleFile]
     gen_cap_args += ["-v"]
 
-    if args.SigningToolPath is not None:
-        gen_cap_args += ["--signing-tool-path", args.SigningToolPath]
+    if signingToolPath is not None:
+        gen_cap_args += ["--signing-tool-path", signingToolPath]
     gen_cap_args += [sub_region_fv_file]
 
     status = generate_capsule_tool.generate_capsule(gen_cap_args)
@@ -191,4 +182,22 @@ if __name__ == "__main__":
 
     utils.cleanup(to_remove)
 
+    return status
+
+
+if __name__ == "__main__":
+
+    banner(TOOLNAME, __version__)
+    
+    parser = create_arg_parser()
+    args = parser.parse_args()
+
+    
+    # Check if openssl is installed or at given path
+    utils.check_for_tool('openssl', 'version', tool_path=args.SigningToolPath)
+
+    sub_region_desc = subrgn_descrptr.SubRegionDescriptor()
+    sub_region_desc.parse_json_data(args.InputFile)
+    status = generate_sub_region_capsule (sub_region_desc, args.OutputCapsuleFile, args.SigningToolPath,
+     args.OpenSslSignerPrivateCertFile, args.OpenSslOtherPublicCertFile, args.OpenSslTrustedPublicCertFile )
     sys.exit(status)

@@ -70,7 +70,7 @@ if __name__ == "__main__":
     sub_region_desc = subrgn_descrptr.SubRegionDescriptor()
     sub_region_desc.parse_json_data(args.InputFile)
     capsule_tool.logger = logger
-    capsule_tool.generate_sub_region_fv(None, sub_region_desc, args.OutputFvFile)
+    capsule_tool.generate_sub_region_fv(sub_region_desc, args.OutputFvFile)
 
 
     # Creating list of files to remove
