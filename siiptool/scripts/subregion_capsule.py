@@ -145,6 +145,9 @@ def generate_sub_region_capsule( sub_region_desc,
                 OpenSslTrustedPublicCertFile
             ]
     ):
+        
+        # Check if openssl is installed or at given path
+        utils.check_for_tool('openssl', 'version', tool_path=signingToolPath)
         gen_cap_args += ["--signer-private-cert", OpenSslSignerPrivateCertFile]
         gen_cap_args += ["--other-public-cert", OpenSslOtherPublicCertFile]
         gen_cap_args += ["--trusted-public-cert", OpenSslTrustedPublicCertFile]
@@ -170,7 +173,7 @@ def generate_sub_region_capsule( sub_region_desc,
     gen_cap_args += ["-v"]
 
     if signingToolPath is not None:
-        gen_cap_args += ["--signing-tool-path", signingToolPath]
+        gen_cap_args += ["--signing-tool-path", os.path.abspath(signingToolPath)]
     gen_cap_args += [sub_region_fv_file]
 
     status = generate_capsule_tool.generate_capsule(gen_cap_args)
@@ -191,11 +194,7 @@ if __name__ == "__main__":
     
     parser = create_arg_parser()
     args = parser.parse_args()
-
     
-    # Check if openssl is installed or at given path
-    utils.check_for_tool('openssl', 'version', tool_path=args.SigningToolPath)
-
     sub_region_desc = subrgn_descrptr.SubRegionDescriptor()
     sub_region_desc.parse_json_data(args.InputFile)
     status = generate_sub_region_capsule (sub_region_desc, args.OutputCapsuleFile, args.SigningToolPath,

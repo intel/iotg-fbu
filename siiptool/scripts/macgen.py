@@ -62,23 +62,40 @@ def create_arg_parser():
         default="tsnMacCapsule.bin",
     )
 
+    my_parser.add_argument(
+        "-s",
+        "--signer-private-cert",
+        dest="OpenSslSignerPrivateCertFile",
+        help="OpenSSL signer private certificate filename.",
+    )
+    my_parser.add_argument(
+        "-p",
+        "--other-public-cert",
+        dest="OpenSslOtherPublicCertFile",
+        help="OpenSSL other public certificate filename.",
+    )
+    my_parser.add_argument(
+        "-t",
+        "--trusted-public-cert",
+        dest="OpenSslTrustedPublicCertFile",
+        help="OpenSSL trusted public certificate filename.",
+    )
+    my_parser.add_argument(
+        "--signing-tool-path",
+        dest="SigningToolPath",
+        help="Path to signtool or OpenSSL tool. "
+             " Optional if path to tools are already in PATH.",
+    )
+
     return my_parser
 
 
 def build_tsn_mac_address_descreiptor(descriptor, dev_mac_pairs):
 
-    def wrong_format(arg):
-        print("Wrong argument format: {}".format(arg))
-        exit(-1)
-
-    def out_of_range(arg):
-        print("Value out of range: {}".format(arg))
-        exit(-1)
-
     def hex_to_bin(hex, bits):
         binVal = bin(int(hex, 16))[2:].zfill(bits)
         if len(binVal) > bits:
-            raise Exception('Out of range')
+            raise ValueError('Out of range')
         return binVal
 
 
@@ -95,27 +112,40 @@ def build_tsn_mac_address_descreiptor(descriptor, dev_mac_pairs):
     data.append(["NumPorts", "DECIMAL", 4, len(dev_mac_pairs)])
 
     for arg in dev_mac_pairs:
-        dm = arg.split(':')
-        if len(dm) != 2:
-            wrong_format(arg)
-
-        bdf = dm[0].split('.')
-        if len(bdf) != 3:
-            wrong_format(arg) 
-
-        hexBus, hexDev, hexFun = bdf
-        mac = dm[1]
-
-        if len(mac) != 12:
-            wrong_format(arg)
 
         try:
-            hex_to_bin(mac, 48)
+            dm = arg.split(':')
+            if len(dm) != 2: # BDF and MAC address must be provided
+                raise ValueError('Wrong argument format')
+
+            bdf = dm[0].split('.')
+            if len(bdf) != 3: # All 3 parts of BDF must be provided
+                raise ValueError('Wrong BDF format')
+
+            hexBus, hexDev, hexFun = bdf
+            mac = dm[1]
+            if len(mac) != 12: # MAC address must be 12 digits
+                raise ValueError('Wrong MAC length')
+
+            binMac = hex_to_bin(mac, 48) # MAC address must be valid Hexa digits
+            if binMac.endswith('1'): # Validate MAC address is Unicast not multicast/broadcast
+                raise ValueError('Invalid MAC Address, ends with odd number, unicast/multicast bit must be zero')
+
+            # Validate MAC address is not from the invalid list
+            invallid_list = [
+                '000000000000',
+                'FFFFFFFFFFFF'
+            ]
+            if mac in invallid_list:
+                raise ValueError('Invalid MAC Address, from the invalid list {}'.format(invallid_list))          
+
+            # Validate all values are numeric and within range
             binBus = hex_to_bin(hexBus, 8) # 8 bit binary
             binDev = hex_to_bin(hexDev, 5) # 5 bit binary
             binFun = hex_to_bin(hexFun, 3) # 3 bit binary
-        except:
-            out_of_range(arg)
+        except ValueError as error:
+            print("{}: {}".format(error,arg))
+            exit(2)
             
 
         binBdf = "0000{bus}{dev}{fun}000000000000".format(bus = binBus, dev = binDev, fun = binFun)
@@ -147,7 +177,8 @@ if __name__ == "__main__":
 
     desc = subrgn_descrptr.SubRegionDescriptor()
     build_tsn_mac_address_descreiptor(desc, args.DevMac)
-    capsule_tool.generate_sub_region_capsule(desc, args.Output_Capsule_File )
+    capsule_tool.generate_sub_region_capsule(desc, args.Output_Capsule_File, args.SigningToolPath,
+     args.OpenSslSignerPrivateCertFile, args.OpenSslOtherPublicCertFile, args.OpenSslTrustedPublicCertFile )
         
 
 
