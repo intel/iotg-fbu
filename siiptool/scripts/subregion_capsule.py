@@ -23,6 +23,7 @@ import thirdparty.edk2_capsule_tool.GenerateCapsule as generate_capsule_tool
 from common.siip_constants import VERSION as __version__
 from common.banner import banner
 import common.logger as logging
+from scripts.subregion_sign import sign_subregion
 
 logger = logging.getLogger("subregion_capsule")
 
@@ -42,12 +43,18 @@ def generate_sub_region_fv(
 ):
 
     sub_region_image = "SubRegionImage.bin"
+    signed_sub_region_image = "SignedSubRegionImage.bin"
     fv_ffs_file_list = []
 
     for file_index, ffs_file in enumerate(sub_region_descriptor.ffs_files):
 
         sbrgn_image.generate_sub_region_image(ffs_file, sub_region_image)
         ip, ip_ops = sbrgn_image.ip_info_from_guid(ffs_file.ffs_guid)
+
+        if ffs_file.signing_key is not None:
+            sign_subregion(sub_region_image, ffs_file.signing_key, signed_sub_region_image,
+             ffs_file.signer_type, ip, ffs_file.vendor_guid)
+            sub_region_image = signed_sub_region_image
 
         # if ffs GUID is not found exit.
         if ip is None:
@@ -137,6 +144,13 @@ def generate_sub_region_capsule( sub_region_desc,
         
     sub_region_fv_file = os.path.join(os.path.curdir, "SubRegionFv.fv")
 
+    if OpenSslSignerPrivateCertFile is None:
+        OpenSslSignerPrivateCertFile = sub_region_desc.signer_prv_cert_file
+    if OpenSslOtherPublicCertFile is None:
+        OpenSslOtherPublicCertFile = sub_region_desc.other_pub_cert_file
+    if OpenSslTrustedPublicCertFile is None:
+        OpenSslTrustedPublicCertFile = sub_region_desc.trusted_pub_cert_file
+
     gen_cap_args = []
     if all(
             [
@@ -182,6 +196,7 @@ def generate_sub_region_capsule( sub_region_desc,
     to_remove = glob.glob("tmp.*")
     to_remove.extend(glob.glob("SubRegionFv.*"))
     to_remove.append("SubRegionImage.bin")
+    to_remove.append("SignedSubRegionImage.bin")
 
     utils.cleanup(to_remove)
 

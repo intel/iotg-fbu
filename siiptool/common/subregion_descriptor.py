@@ -7,6 +7,7 @@
 
 import json
 import uuid
+import os
 
 FMP_CAPSULE_TSN_MAC_ADDRESS_FILE_GUID = uuid.UUID("6fee88ff-49ed-48f1-b77b-ead15771abe7")
 FMP_CAPSULE_TSN_IP_CONFIG_FILE_GUID = uuid.UUID("697f0ea1-b630-4b93-9b08-eaffc5d5fc45")
@@ -51,7 +52,8 @@ class SubRegionDescSyntaxError(Exception):
 
 
 class SubRegionFfsFile(object):
-    def __init__(self, ffs_guid, compression, data):
+    def __init__(self, ffs_guid, compression, data, 
+    signing_key = None, vendor_guid = None, signer_type = 'rsa'):
         self.s_ffs_guid = ffs_guid
         try:
             self.ffs_guid = uuid.UUID(self.s_ffs_guid)
@@ -60,6 +62,9 @@ class SubRegionFfsFile(object):
         self.ffs_guid = ffs_guid
         self.compression = compression
         self.data = []
+        self.signing_key = signing_key
+        self.vendor_guid = vendor_guid
+        self.signer_type = signer_type
         for data_field in data:
             self.data.append(SubRegionDataField(data_field))
 
@@ -108,11 +113,15 @@ class SubRegionDescriptor(object):
         self.s_fv_block_size = None
         self.s_fv_num_block = None
         self.ffs_files = []
+        self.signer_prv_cert_file = None
+        self.other_pub_cert_file = None
+        self.trusted_pub_cert_file = None
 
     def parse_json_data(self, json_file):
         with open(json_file, "r") as file_handle:
             desc_buffer = json.loads(file_handle.read())
             try:
+                json_dir = os.path.dirname(os.path.abspath(json_file))
                 self.s_fmp_guid = desc_buffer["FmpGuid"]
                 try:
                     self.fmp_guid = uuid.UUID(self.s_fmp_guid)
@@ -121,6 +130,19 @@ class SubRegionDescriptor(object):
                 except ValueError:
                     raise SubRegionDescSyntaxError("FmpGuid")
                 self.version = desc_buffer["Version"]
+
+                if "OpenSSLSignerPrivateCertFile" in desc_buffer:
+                    self.signer_prv_cert_file = desc_buffer["OpenSSLSignerPrivateCertFile"]
+                    if not os.path.isabs(self.signer_prv_cert_file):
+                        self.signer_prv_cert_file = os.path.join(json_dir, self.signer_prv_cert_file)
+                if "OpenSSLOtherPublicCertFile" in desc_buffer:
+                    self.other_pub_cert_file = desc_buffer["OpenSSLOtherPublicCertFile"]
+                    if not os.path.isabs(self.other_pub_cert_file):
+                        self.other_pub_cert_file = os.path.join(json_dir, self.other_pub_cert_file)
+                if "OpenSSLTrustedPublicCertFile" in desc_buffer:
+                    self.trusted_pub_cert_file = desc_buffer["OpenSSLTrustedPublicCertFile"]
+                    if not os.path.isabs(self.trusted_pub_cert_file):
+                        self.trusted_pub_cert_file = os.path.join(json_dir, self.trusted_pub_cert_file)
 
                 self.fv = desc_buffer["FV"]
                 self.s_fv_guid = self.fv["FvGuid"]
@@ -141,7 +163,18 @@ class SubRegionDescriptor(object):
                     ffs_guid = ffs_file["FileGuid"]
                     compression = ffs_file["Compression"]
                     data = ffs_file["Data"]
-                    self.ffs_files.append(SubRegionFfsFile(ffs_guid, compression, data))
+                    if "SigningKey" in ffs_file:
+                        signing_key = ffs_file["SigningKey"]                        
+                        if not os.path.isabs(signing_key):
+                            signing_key = os.path.join(json_dir, signing_key)
+                        vendor_guid = ffs_file["VendorGuid"]
+                        signer_type = ffs_file["SignerType"]
+                        self.ffs_files.append(
+                            SubRegionFfsFile(ffs_guid, compression, data,
+                             signing_key, vendor_guid, signer_type)
+                             )
+                    else:
+                        self.ffs_files.append(SubRegionFfsFile(ffs_guid, compression, data))
 
                 for ffs_file in self.ffs_files:
                     if not self.check_file_good(ffs_file):
