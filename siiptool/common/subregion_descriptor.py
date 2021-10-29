@@ -13,6 +13,7 @@ FMP_CAPSULE_TSN_MAC_ADDRESS_FILE_GUID = uuid.UUID("6fee88ff-49ed-48f1-b77b-ead15
 FMP_CAPSULE_TSN_IP_CONFIG_FILE_GUID = uuid.UUID("697f0ea1-b630-4b93-9b08-eaffc5d5fc45")
 FMP_CAPSULE_PSE_TSN_MAC_CONFIG_FILE_GUID = uuid.UUID("90c9751d-fa74-4ea6-8c4b-f44d2be8cd4b")
 FMP_CAPSULE_PSE_FW_FILE_GUID = uuid.UUID("aad1e926-23b8-4c3a-8b44-0c9a031664f2")
+FMP_CAPSULE_PSE_FKM_FILE_GUID = uuid.UUID("4789B506-5E9A-4C0F-8646-8BE99E87D766")
 FMP_CAPSULE_TCC_ARB_FILE_GUID = uuid.UUID("a7ee90b1-fb4a-4478-b868-367ee9ec97e2")
 FMP_CAPSULE_OOB_MANAGEABILITY_FILE_GUID = uuid.UUID("bf2ae378-01e0-4605-9e3b-2ee2fc7339de")
 FMP_CAPSULE_TCC_STREAM = uuid.UUID("BF2AE378-01E0-4605-9E3B-2EE2FC7339DE")
@@ -52,7 +53,7 @@ class SubRegionDescSyntaxError(Exception):
 
 
 class SubRegionFfsFile(object):
-    def __init__(self, ffs_guid, compression, data, 
+    def __init__(self, ffs_guid, compression, data,
     signing_key = None, vendor_guid = None, signer_type = 'rsa'):
         self.s_ffs_guid = ffs_guid
         try:
@@ -93,6 +94,7 @@ class SubRegionDescriptor(object):
         FMP_CAPSULE_TSN_MAC_ADDRESS_FILE_GUID,
         FMP_CAPSULE_PSE_TSN_MAC_CONFIG_FILE_GUID,
         FMP_CAPSULE_PSE_FW_FILE_GUID,
+        FMP_CAPSULE_PSE_FKM_FILE_GUID,
         FMP_CAPSULE_TCC_ARB_FILE_GUID,
         FMP_CAPSULE_OOB_MANAGEABILITY_FILE_GUID,
         FMP_CAPSULE_TSN_IP_CONFIG_FILE_GUID,
@@ -164,7 +166,7 @@ class SubRegionDescriptor(object):
                     compression = ffs_file["Compression"]
                     data = ffs_file["Data"]
                     if "SigningKey" in ffs_file:
-                        signing_key = ffs_file["SigningKey"]                        
+                        signing_key = ffs_file["SigningKey"]
                         if not os.path.isabs(signing_key):
                             signing_key = os.path.join(json_dir, signing_key)
                         vendor_guid = ffs_file["VendorGuid"]
