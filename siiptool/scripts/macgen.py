@@ -163,7 +163,7 @@ def build_tsn_mac_address_descreiptor(descriptor, dev_mac_pairs):
         data.append( ["MacAddressLow",  "HEXADECIMAL",  4, macLow   ])
         data.append( ["MacAddressHigh", "HEXADECIMAL",  4, macHigh  ])
         
-    ffs_file = subrgn_descrptr.SubRegionFfsFile(ffs_guid, False, data)
+    ffs_file = subrgn_descrptr.SubRegionFfsFile(ffs_guid, data)
 
     descriptor.ffs_files.append(ffs_file)
 

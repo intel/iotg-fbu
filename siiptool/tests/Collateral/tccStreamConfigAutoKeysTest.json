@@ -12,7 +12,6 @@
     [
       {
         "FileGuid": "7F6AD829-15E9-4FDE-9DD3-0548BB7F56F3",
-        "Compression": false,
         "SigningKey": "tccVendorSigning.key",
         "VendorGuid": "7F6AD829-15E9-4FDE-9DD3-0548BB7F56F3",
         "SignerType": "rsa",

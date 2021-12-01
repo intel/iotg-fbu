@@ -53,7 +53,7 @@ class SubRegionDescSyntaxError(Exception):
 
 
 class SubRegionFfsFile(object):
-    def __init__(self, ffs_guid, compression, data,
+    def __init__(self, ffs_guid, data,
     signing_key = None, vendor_guid = None, signer_type = 'rsa'):
         self.s_ffs_guid = ffs_guid
         try:
@@ -61,7 +61,6 @@ class SubRegionFfsFile(object):
         except ValueError:
             raise SubRegionDescSyntaxError("ffs_guid")
         self.ffs_guid = ffs_guid
-        self.compression = compression
         self.data = []
         self.signing_key = signing_key
         self.vendor_guid = vendor_guid
@@ -163,7 +162,6 @@ class SubRegionDescriptor(object):
                 ffs_file_list = self.fv["FfsFiles"]
                 for ffs_file in ffs_file_list:
                     ffs_guid = ffs_file["FileGuid"]
-                    compression = ffs_file["Compression"]
                     data = ffs_file["Data"]
                     if "SigningKey" in ffs_file:
                         signing_key = ffs_file["SigningKey"]
@@ -172,11 +170,11 @@ class SubRegionDescriptor(object):
                         vendor_guid = ffs_file["VendorGuid"]
                         signer_type = ffs_file["SignerType"]
                         self.ffs_files.append(
-                            SubRegionFfsFile(ffs_guid, compression, data,
+                            SubRegionFfsFile(ffs_guid, data,
                              signing_key, vendor_guid, signer_type)
                              )
                     else:
-                        self.ffs_files.append(SubRegionFfsFile(ffs_guid, compression, data))
+                        self.ffs_files.append(SubRegionFfsFile(ffs_guid, data))
 
                 for ffs_file in self.ffs_files:
                     if not self.check_file_good(ffs_file):
@@ -186,9 +184,6 @@ class SubRegionDescriptor(object):
 
     def check_file_good(self, ffs_file):
         valid_file = True
-
-        if ffs_file.compression not in [False, True]:
-            valid_file = False
 
         for data_field in ffs_file.data:
             if type(data_field.name) not in [str]:
