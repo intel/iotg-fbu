@@ -66,6 +66,11 @@ Format of the JSON payload descriptor file:
          {
           "FileGuid": <string (GUID)>,
           "Compression": <boolean>,
+
+          "signingKey": <string (file)>,
+          "VendorGuid": <string (GUID)>,
+          "signerType": <string (pkcs7 or rsa)>,
+
           "Data" :
           [
              [<string (member_name)>, <string (data_type)>, <integer (byte_size)>, <integer|string (member_value)>],
@@ -78,6 +83,8 @@ Format of the JSON payload descriptor file:
 ```
 
 Supported `data_type` values are "DECIMAL", "HEXADECIMAL", "STRING" or "FILE".
+
+signingKey is optional, but if set  VendorGuid and signerType must be set as well and then subregion will be built from Data and signed using signingKey, VendorGuid, and signerType.
 
 #### Certificate files
 

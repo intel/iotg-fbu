@@ -32,7 +32,6 @@ __prog__ = "subregion_sign"
 
 TOOLNAME = "Sub-Region Signing Tool"
 
-banner(TOOLNAME, __version__)
 
 if sys.version_info < (3, 6):
     raise Exception("Python 3.6 is the minimal version required")
@@ -159,7 +158,7 @@ def get_certifcation_info(cl_inputs, signer):
     cert_info = CERT_TYPE.get(cl_inputs.signer_type)
 
     # Create openSSL command 1
-    cmd = f"{path} {cert_info[1]} {signer}"
+    cmd = f'{path} {cert_info[1]}  "{signer}"'
 
     # Create openSSL command 2
     if cert_info[2] is not None:
@@ -344,17 +343,12 @@ def chk_guid_format(guid):
         )
     return guid
 
-
-def main():
-    """Entry to script."""
-
-    parser = create_arg_parser()
-    args = parser.parse_args()
+def sign_subregion(subregion_file, signer_file, signed_file, signer_type, subregion_name, vendor_guid, show = False, tool_path = None):
 
     # Use absolute path for openSSL
-    sbrgn_file = Path(args.subregion_file).resolve()
-    signer_file = Path(args.signerfile).resolve()
-    outfile = Path(args.signed_file).resolve()
+    sbrgn_file = Path(subregion_file).resolve()
+    signer_file = Path(signer_file).resolve()
+    outfile = Path(signed_file).resolve()
 
     filenames = [str(sbrgn_file), str(signer_file)]
 
@@ -367,13 +361,21 @@ def main():
         LOGGER.critical("size of {} subregion file must be greater than 0!".format(sbrgn_file))
         sys.exit(status)
 
-    status = utils.check_key(signer_file, args.signer_type, LOGGER)
+    status = utils.check_key(signer_file, signer_type, LOGGER)
     if status != 0:
         sys.exit(status)
 
     outfile = utils.file_not_exist(outfile, LOGGER)
 
-    cert_info = get_certifcation_info(args, signer_file)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("name, vendor_guid, tool_path, signer_type")
+    cl_inputs = parser.parse_args(['name={}'.format(subregion_name)])
+    cl_inputs.name = subregion_name
+    cl_inputs.vendor_guid = vendor_guid
+    cl_inputs.tool_path = tool_path
+    cl_inputs.signer_type = signer_type
+
+    cert_info = get_certifcation_info(cl_inputs, signer_file)
 
     uefi_subreg_authen = UefiSubregAuthenClass(cert_info)
 
@@ -414,7 +416,7 @@ def main():
     # pack structure with signature and get update size of header
     uefi_signed_data = uefi_subreg_authen.encode()
 
-    if args.show:
+    if show:
         uefi_subreg_authen.dump_info()
 
     # Create output EFI subregion authentication header and signature and original file
@@ -422,10 +424,19 @@ def main():
 
     print(
         "Signed {} sub-region({}) was successfully generated.".format(
-            args.name, outfile
+            subregion_name, outfile
         )
     )
 
+def main():
+    """Entry to script."""
+
+    parser = create_arg_parser()
+    args = parser.parse_args()
+    sign_subregion(args.subregion_file, args.signerfile, args.signed_file,
+     args.signer_type, args.name, args.vendor_guid, args.show, args.tool_path)
+
 
 if __name__ == "__main__":
+    banner(TOOLNAME, __version__)
     main()
